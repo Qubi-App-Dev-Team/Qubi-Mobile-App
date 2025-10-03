@@ -8,7 +8,7 @@ class AppBackdrop extends StatelessWidget {
   const AppBackdrop({
     super.key,
     required this.child,
-    this.assetPath = 'assets/images/qubi_bg.svg', // Provide filepath for the svg here
+    this.assetPath = 'assets/images/light_bg.svg', // Provide filepath for the svg here
   });
 
   @override
