@@ -8,12 +8,13 @@ from firebase_admin import credentials, firestore
 
 load_dotenv()
 
-# Option 1: Use environment variable (requires FIREBASE_CREDENTIALS to be set)
-# cred_dict = json.loads(os.getenv('FIREBASE_CREDENTIALS'))
-# cred = credentials.Certificate(cred_dict)
-
-# Option 2: Use service account key file (recommended)
-cred = credentials.Certificate('service-account-key.json')
+try:
+    # Option 1: Use environment variable (requires FIREBASE_CREDENTIALS to be set)
+    cred_dict = json.loads(os.getenv('FIREBASE_CREDENTIALS'))
+    cred = credentials.Certificate(cred_dict)
+except:
+    # Option 2: Use service account key file (recommended)
+    cred = credentials.Certificate('service-account-key.json')
 
 firebase_admin.initialize_app(cred)
 db = firestore.client()
