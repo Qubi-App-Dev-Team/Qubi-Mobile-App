@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:qubi_app/components/qubi_card.dart';
+import 'package:qubi_app/pages/home/run.dart';
+import 'package:qubi_app/pages/home/executor.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -79,8 +81,18 @@ class HomePage extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.start,
                   children: [
-                    buildGradientButton("Read Report", true),
+                    // "Read Report" → RunPage()
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const RunPage()),
+                        );
+                      },
+                      child: buildGradientButton("Read Report", true),
+                    ),
                     const SizedBox(width: 12),
+                    // "Skip to Story" (currently no destination, so keep it inactive for now)
                     buildGradientButton("Skip to Story", false),
                   ],
                 ),
@@ -127,6 +139,10 @@ class HomePage extends StatelessWidget {
                 SizedBox(height: 6),
                 GestureDetector(
                   onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const ExecutorPage()),
+                    );
                     debugPrint('hello');
                     // TODO: navigate to next page here
                   },
