@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-//stateful widget means it can change based on state
-//so in this case the content displayed changes based on what story we are on
 class StoryPage extends StatefulWidget {
   const StoryPage({Key? key}) : super(key: key);
 
@@ -12,7 +10,6 @@ class StoryPage extends StatefulWidget {
 
 class _StoryPageState extends State<StoryPage> {
   final PageController _pageController = PageController();
-  //what story we are looking at
   int _currentIndex = 0;
 
   // Local stories
@@ -29,7 +26,27 @@ class _StoryPageState extends State<StoryPage> {
     },
     {
       "title": "Watch a single electron move during a chemical reaction for first time ever!",
-      "subtitle": "An illustration of X-rays scattering off the valence electrons surrounding ammonia molecules",
+      "subtitle": '''An illustration of X-rays scattering off the valence electrons surrounding ammonia molecules
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+      scroll to see''',
       "image": "assets/images/story3.png"
     },
   ];
@@ -58,109 +75,133 @@ class _StoryPageState extends State<StoryPage> {
 
   @override
   Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+    final width = size.width;
+    final height = size.height;
+
     return Scaffold(
       body: Stack(
         fit: StackFit.expand,
         children: [
-          // SVG background
+          // Background SVG
           SvgPicture.asset(
             'assets/images/light_bg.svg',
             fit: BoxFit.cover,
           ),
 
-          // Tap detector (captures whole screen taps)
+          // Tap detector
           GestureDetector(
             behavior: HitTestBehavior.opaque,
             onTapUp: (details) {
-              final width = MediaQuery.of(context).size.width;
               final dx = details.globalPosition.dx;
-
-              // Tap right side → next
               if (dx > width / 2) {
                 _nextStory();
               } else {
-                // Tap left side → previous
                 _previousStory();
               }
             },
             child: PageView.builder(
               controller: _pageController,
               onPageChanged: _onPageChanged,
-              physics: const NeverScrollableScrollPhysics(), // disable swipe
+              physics: const NeverScrollableScrollPhysics(),
               itemCount: _stories.length,
               itemBuilder: (context, index) {
                 final story = _stories[index];
 
                 return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 50),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Progress bars
-                      Row(
-                        children: List.generate(
-                          _stories.length,
-                          (i) => Expanded(
-                            child: Container(
-                              margin: const EdgeInsets.symmetric(horizontal: 2),
-                              height: 3,
-                              decoration: BoxDecoration(
-                                color: i <= _currentIndex
-                                    ? Colors.black
-                                    : Colors.black.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                            ),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: width * 0.04,
+                    vertical: height * 0.12, // leave room for X + bars
+                  ),
+                  child: SingleChildScrollView( // <-- FIX for overflow
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Title
+                        Text(
+                          story["title"]!,
+                          style: TextStyle(
+                            fontSize: width * 0.055,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black,
                           ),
                         ),
-                      ),
-                      const SizedBox(height: 20),
+                        SizedBox(height: height * 0.02),
 
-                      // Close button (does nothing yet)
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: IconButton(
-                          onPressed: () {},
-                          icon: const Icon(Icons.close, color: Colors.black),
+                        // Image
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(width * 0.04),
+                          child: Image.asset(
+                            story["image"]!,
+                            width: double.infinity,
+                            height: height * 0.45,
+                            fit: BoxFit.cover,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 10),
+                        SizedBox(height: height * 0.02),
 
-                      // Title
-                      Text(
-                        story["title"]!,
-                        style: const TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black,
+                        // Subtitle
+                        Text(
+                          story["subtitle"]!,
+                          style: TextStyle(
+                            fontSize: width * 0.04,
+                            color: Colors.black87,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 20),
-
-                      // Image
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
-                        child: Image.asset(
-                          story["image"]!,
-                          width: double.infinity,
-                          height: 400,
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Subtitle
-                      Text(
-                        story["subtitle"]!,
-                        style: const TextStyle(
-                          fontSize: 14,
-                          color: Colors.black87,
-                        ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 );
               },
+            ),
+          ),
+
+          // X button + Progress bars pinned at top
+          SafeArea(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // X button
+                Padding(
+                  padding: EdgeInsets.only(
+                    left: width * 0.02,
+                    top: height * 0.005,
+                  ),
+                  child: IconButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: Icon(
+                      Icons.close,
+                      color: Colors.black,
+                      size: width * 0.07,
+                    ),
+                  ),
+                ),
+
+                // Progress bars
+                Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: width * 0.04,
+                    vertical: height * 0.01,
+                  ),
+                  child: Row(
+                    children: List.generate(
+                      _stories.length,
+                      (i) => Expanded(
+                        child: Container(
+                          margin: EdgeInsets.symmetric(horizontal: width * 0.005),
+                          height: height * 0.004,
+                          decoration: BoxDecoration(
+                            color: i <= _currentIndex
+                                ? Colors.black
+                                : Colors.black.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ],
