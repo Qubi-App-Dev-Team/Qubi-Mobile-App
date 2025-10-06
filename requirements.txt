@@ -1,0 +1,5 @@
+qiskit
+qiskit-ionq
+firebase-admin
+python-dotenv
+matplotlib
