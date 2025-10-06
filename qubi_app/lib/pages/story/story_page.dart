@@ -1,8 +1,7 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-//stateful widget means it can change based on state
-//so in this case the content displayed changes based on what story we are on
 class StoryPage extends StatefulWidget {
   const StoryPage({Key? key}) : super(key: key);
 
@@ -12,49 +11,100 @@ class StoryPage extends StatefulWidget {
 
 class _StoryPageState extends State<StoryPage> {
   final PageController _pageController = PageController();
-  //what story we are looking at
   int _currentIndex = 0;
 
-  // Local stories
+  /// 🔸 Control how long each story stays
+  final int storyDurationSeconds = 4;
+
+  Timer? _storyTimer;
+
+  // Local story data
   final List<Map<String, String>> _stories = [
     {
       "title": "In an Ion Trap, atoms are levitated in mid-air!",
-      "subtitle": "Here's a picture of a single Ion in an Ion Trap. (Look closely!)",
+      "subtitle":
+          "Here's a picture of a single Ion in an Ion Trap. (Look closely!)",
       "image": "assets/images/story1.png"
     },
     {
       "title": "And here’s an image of multiple Cesium atoms strung in a line",
-      "subtitle": "That’s how IonQ sets up their quantum computer - it’s 36 of these in a line!",
+      "subtitle":
+          "That’s how IonQ sets up their quantum computer - it’s 36 of these in a line!",
       "image": "assets/images/story2.png"
     },
     {
-      "title": "Watch a single electron move during a chemical reaction for first time ever!",
-      "subtitle": "An illustration of X-rays scattering off the valence electrons surrounding ammonia molecules",
+      "title":
+          "Watch a single electron move during a chemical reaction for first time ever!",
+      "subtitle":
+          "An illustration of X-rays scattering off the valence electrons surrounding ammonia molecules",
       "image": "assets/images/story3.png"
     },
   ];
 
+  // ---- STORY NAVIGATION ---- //
+
   void _nextStory() {
     if (_currentIndex < _stories.length - 1) {
       _pageController.nextPage(
-        duration: const Duration(milliseconds: 200),
+        duration: const Duration(milliseconds: 300),
         curve: Curves.easeInOut,
       );
+    } else {
+      // Optionally reset or close the story viewer at the end
+      _cancelTimer();
     }
   }
 
   void _previousStory() {
     if (_currentIndex > 0) {
       _pageController.previousPage(
-        duration: const Duration(milliseconds: 200),
+        duration: const Duration(milliseconds: 300),
         curve: Curves.easeInOut,
       );
     }
   }
 
   void _onPageChanged(int index) {
-    setState(() => _currentIndex = index);
+    setState(() {
+      _currentIndex = index;
+    });
+    _restartTimer(); // start a new timer for the new story
   }
+
+  // ---- TIMER CONTROL ---- //
+
+  void _startTimer() {
+    _storyTimer = Timer.periodic(
+      Duration(seconds: storyDurationSeconds),
+      (timer) {
+        _nextStory();
+      },
+    );
+  }
+
+  void _restartTimer() {
+    _cancelTimer();
+    _startTimer();
+  }
+
+  void _cancelTimer() {
+    _storyTimer?.cancel();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _startTimer(); // start the auto-advance timer when the page opens
+  }
+
+  @override
+  void dispose() {
+    _cancelTimer();
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  // ---- BUILD UI ---- //
 
   @override
   Widget build(BuildContext context) {
@@ -68,18 +118,16 @@ class _StoryPageState extends State<StoryPage> {
             fit: BoxFit.cover,
           ),
 
-          // Tap detector (captures whole screen taps)
+          // Tap zones
           GestureDetector(
             behavior: HitTestBehavior.opaque,
             onTapUp: (details) {
               final width = MediaQuery.of(context).size.width;
               final dx = details.globalPosition.dx;
 
-              // Tap right side → next
               if (dx > width / 2) {
                 _nextStory();
               } else {
-                // Tap left side → previous
                 _previousStory();
               }
             },
@@ -92,7 +140,10 @@ class _StoryPageState extends State<StoryPage> {
                 final story = _stories[index];
 
                 return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 50),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 50,
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -114,9 +165,10 @@ class _StoryPageState extends State<StoryPage> {
                           ),
                         ),
                       ),
+
                       const SizedBox(height: 20),
 
-                      // Close button (does nothing yet)
+                      // Close button
                       Align(
                         alignment: Alignment.centerLeft,
                         child: IconButton(
@@ -124,6 +176,7 @@ class _StoryPageState extends State<StoryPage> {
                           icon: const Icon(Icons.close, color: Colors.black),
                         ),
                       ),
+
                       const SizedBox(height: 10),
 
                       // Title
@@ -135,6 +188,7 @@ class _StoryPageState extends State<StoryPage> {
                           color: Colors.black,
                         ),
                       ),
+
                       const SizedBox(height: 20),
 
                       // Image
@@ -147,6 +201,7 @@ class _StoryPageState extends State<StoryPage> {
                           fit: BoxFit.cover,
                         ),
                       ),
+
                       const SizedBox(height: 16),
 
                       // Subtitle
