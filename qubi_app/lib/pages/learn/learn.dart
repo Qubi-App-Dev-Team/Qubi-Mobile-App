@@ -5,11 +5,9 @@ class LearnPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
-      child: Text(
-        'Learn Page',
-        style: TextStyle(fontSize: 24),
-      ),
+    return const Scaffold(
+      backgroundColor: Color(0xFFE6EEF8),
+      body: Center(child: Text('Learn Page')),
     );
   }
 }
