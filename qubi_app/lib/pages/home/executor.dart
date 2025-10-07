@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:qubi_app/components/executor_card.dart';
+import 'package:qubi_app/pages/home/components/executor_card.dart';
 
 class ExecutorPage extends StatelessWidget {
   const ExecutorPage({super.key});

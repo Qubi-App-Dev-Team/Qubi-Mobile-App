@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
+import 'package:qubi_app/pages/story/story_page.dart';
 
 class RunPage extends StatelessWidget {
   const RunPage({super.key});
@@ -16,7 +18,14 @@ class RunPage extends StatelessWidget {
             thickness: 1,
           ),
           GestureDetector(
-            onTap: () => debugPrint("Story clicked"),
+            onTap: () => {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const StoryPage(),
+                ),
+              )
+            },
             child: Container(
               margin: const EdgeInsets.all(16),
               padding: const EdgeInsets.symmetric(vertical: 16),
@@ -268,7 +277,76 @@ class RunPage extends StatelessWidget {
               ),
             ),
 
-            const SizedBox(height: 20),
+            const SizedBox(height: 15),
+
+            Container(
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(8),
+                  topRight: Radius.circular(8),
+                  bottomLeft: Radius.circular(8),
+                  bottomRight: Radius.circular(8),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.05),
+                    blurRadius: 8,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Header row
+                  Padding(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: const [
+                        Text(
+                          "Circuit",
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        Text(
+                          "Depth 5",
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.black54,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const Divider(
+                    color: Color(0xFFE0E6ED),
+                    height: 1,
+                    thickness: 1,
+                  ),
+
+                  Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
+                    width: double.infinity,
+                    child: SvgPicture.asset(
+                      'assets/images/circuit1.svg',
+                      height: 140, // adjust to fit your design
+                      width: double.infinity,
+                      fit: BoxFit.contain,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 12),
 
             // --- Results Section --------------------------------------
             Container(

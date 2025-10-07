@@ -120,7 +120,7 @@ class _StoryPageState extends State<StoryPage> {
                       Align(
                         alignment: Alignment.centerLeft,
                         child: IconButton(
-                          onPressed: () {},
+                          onPressed: () => Navigator.pop(context),
                           icon: const Icon(Icons.close, color: Colors.black),
                         ),
                       ),

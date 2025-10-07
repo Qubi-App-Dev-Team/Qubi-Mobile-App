@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../pages/home/qubis_page.dart'; //home page
+import '../pages/home/home.dart';
 import '../pages/learn/pages/all_chapters_page.dart'; //learning page
 import '../pages/profile/profile.dart'; //user profile page
 
@@ -18,7 +19,7 @@ class _NavBarState extends State<NavBar> {
 
   // List of pages possible to navigate to
   final List<Widget> _pages = const [
-    QubisPage(), //home
+    HomePage(), //home
     AllChaptersPage(),
     ProfilePage(),
   ];
