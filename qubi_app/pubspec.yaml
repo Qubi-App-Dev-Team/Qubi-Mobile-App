@@ -24,6 +24,7 @@ flutter:
   assets:
     - assets/images/
     - assets/fonts/   # not required for fonts to work, but harmless
+    - assets/icons/
 
   fonts:
     - family: Strawford
