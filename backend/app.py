@@ -16,10 +16,10 @@ class Time(BaseModel):
 
 # Dictionary for histogram results - assuming 2 qubits
 class Model(BaseModel):
-    first: float 
-    second: float
-    third: float
-    fourth: float
+    first: float    # 0001
+    second: float   # 0010
+    third: float    # 0100
+    fourth: float   # 1000
 
 # Each item in circuit
 class Gate(BaseModel):
@@ -52,15 +52,16 @@ class Circuit(BaseModel):
 
 # Env creds
 load_dotenv()
-firebase_creds_str = os.environ.get("FIREBASE_CREDENTIALS")
-firebase_creds_dict = json.loads(firebase_creds_str)
+firebase_creds = os.getenv("FIREBASE_CREDENTIALS")
+firebase_creds_dict = json.loads(firebase_creds)
 cred = credentials.Certificate(firebase_creds_dict)
 
 # init and create app
 application = firebase_admin.initialize_app(cred)
 db = firestore.client()
 
-@app.post("/run") # Posting a run
+# Posting a run
+@app.post("/run") 
 async def post_run(run: Run):
     ref = db.collection("runs").document()
     ref.set({
@@ -83,7 +84,8 @@ async def post_run(run: Run):
     })
     return {"message": f"It posted to website. {ref.id}"}
 
-@app.post("/circuit") # Posting a circuit
+# Posting a circuit
+@app.post("/circuit") 
 async def post_circuit(circuit: Circuit):
     circuit.gates.append(circuit.measure) # Adding measurement to last gates list
     ref = db.collection("circuits").document().set({
@@ -100,7 +102,8 @@ async def post_circuit(circuit: Circuit):
     })
     return {"message": "Posted a new circuit."}
 
-@app.get("/runs/{identifier}") # Reading
+# Read a run
+@app.get("/runs/{identifier}")
 async def get_run(identifier: str):
     run = db.collection("runs").document(identifier).get()
     if run.exists:
@@ -108,18 +111,42 @@ async def get_run(identifier: str):
     else:
         return {"error": "Run not found"}
 
-@app.put("/runs/{identifier}/{field}/{value}") # Updating
-async def update(identifier: str, field: str, value: str):
+# Read a circuit
+@app.get("/circuits/{identifier}")
+async def get_circuit(identifier: str):
+    circuit = db.collection("circuits").document(identifier).get()
+    if circuit.exists:
+        return circuit.to_dict()
+    else:
+        return {"error": "Circuit not found"}
+
+# Updating a run
+@app.put("/runs/{identifier}/{field}/{value}")
+async def update_run(identifier: str, field: str, value: str):
     document = db.collection("runs").document(identifier)
     document.update({
-        "depth": depth,
-        "quantum_computer": computer_name,
+        field: value
     })
     return {"message": "It worked"}
 
-@app.delete("/runs/{identifier}") # Deleting item
+# Updating a circuit
+@app.put("/circuits/{identifier}/{field}/{value}")
+async def update_circuit(identifier: str, field: str, value: str):
+    document = db.collection("circuits").document(identifier)
+    document.update({
+        field: value
+    })
+    return {"message": "It worked"}
+
+# Deleting a run
+@app.delete("/runs/{identifier}") 
 async def delete_run(identifier: str):
     db.collection("runs").document(identifier).delete()
+    return {"message": f"{identifier} is gone"}
 
+# Deleting a circuit
+@app.delete("/circuits/{identifier}") 
+async def delete_circuit(identifier: str):
+    db.collection("circuits").document(identifier).delete()
     return {"message": f"{identifier} is gone"}
 
