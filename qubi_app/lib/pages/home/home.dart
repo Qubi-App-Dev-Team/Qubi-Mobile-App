@@ -97,7 +97,7 @@ class HomePage extends StatelessWidget {
                       ),
                       const SizedBox(width: 12),
 
-                      // "Skip to Story" (currently no destination, so keep it inactive for now)
+                      // "Skip to Story" (go to story page)
                       GestureDetector(
                         onTap: () {
                           Navigator.push(
