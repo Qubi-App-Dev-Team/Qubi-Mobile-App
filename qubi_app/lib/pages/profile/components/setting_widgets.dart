@@ -64,7 +64,7 @@ class SettingTile extends StatelessWidget {
             width: 44,
             height: 44,
             decoration: BoxDecoration(
-              color: Colors.black.withOpacity(0.06),
+              color: Colors.black.withValues(alpha: 0.06),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Center(
@@ -73,7 +73,7 @@ class SettingTile extends StatelessWidget {
                 width: 20,
                 height: 20,
                 colorFilter: ColorFilter.mode(
-                  Colors.black.withOpacity(0.65),
+                  Colors.black.withValues(alpha: 0.65),
                   BlendMode.srcIn,
                 ),
               ),
@@ -97,7 +97,7 @@ class SettingTile extends StatelessWidget {
                 Text(
                   subtitle,
                   style: TextStyle(
-                    color: Colors.black.withOpacity(0.55),
+                    color: Colors.black.withValues(alpha: 0.55),
                     fontSize: 12,
                   ),
                 ),
@@ -115,16 +115,16 @@ class SettingTile extends StatelessWidget {
 
 /// Shared container style used for cards on the profile screen.
 BoxDecoration cardDecoration() => BoxDecoration(
-  color: Colors.white.withOpacity(0.9),
+  color: Colors.white.withValues(alpha: 0.9),
   borderRadius: BorderRadius.circular(22),
   boxShadow: [
     BoxShadow(
-      color: Colors.black.withOpacity(0.05),
+      color: Colors.black.withValues(alpha: 0.05),
       blurRadius: 16,
       offset: const Offset(0, 6),
     ),
   ],
-  border: Border.all(color: Colors.white.withOpacity(0.65)),
+  border: Border.all(color: Colors.white.withValues(alpha: 0.65)),
 );
 
 /// Small SVG icon wrapper for BottomNavigationBar items.
