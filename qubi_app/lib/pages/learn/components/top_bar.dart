@@ -43,7 +43,7 @@ class TopBar extends StatelessWidget implements PreferredSizeWidget {
               children: [
                 RoundIconButton(icon: Icons.add, onPressed: onAdd),
                 const SizedBox(width: 12),
-                RoundIconButton(icon: Icons.settings, onPressed: onSettings),
+                RoundIconButton(svgAsset: 'assets/images/Settings.svg', onPressed: onSettings),
               ],
             ),
           ],
