@@ -121,7 +121,7 @@ class HomePage extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text('Pending Circuit', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w900, color: Colors.black)),
-                  Text('Veiw all >', style: TextStyle(fontSize: 15, color: Colors.black54)),
+                  Text('View all >', style: TextStyle(fontSize: 15, color: Colors.black54)),
                 ],
               ),
             ),
