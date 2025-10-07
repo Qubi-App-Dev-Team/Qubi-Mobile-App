@@ -12,6 +12,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      debugShowCheckedModeBanner: false, //dont show debug flag
       title: 'Qubi App',
       theme: ThemeData(
         //default color scheme - can change later
