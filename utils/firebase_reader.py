@@ -2,6 +2,7 @@ from dotenv import load_dotenv
 
 import json
 import os
+import time
 
 import firebase_admin
 from firebase_admin import credentials, firestore
@@ -19,12 +20,41 @@ except:
 firebase_admin.initialize_app(cred)
 db = firestore.client()
 
-def get_circuit():
-    circuits = db.collection('circuits').stream()
+processed_docs = set()
 
-    for circuit in circuits:
-        gates = circuit.to_dict()['gates']
-        num_qubits = circuit.to_dict()['num_qubits']
-        num_clbits = circuit.to_dict()['num_clbits']
+def listen_for_circuits(callback):
+    """
+    Listen for new circuit documents and call the callback function when one is added.
 
-        return (gates, num_qubits, num_clbits)
+    Args:
+        callback: Function that takes (doc_id, gates, num_qubits, num_clbits)
+    """
+    def on_snapshot(_col_snapshot, changes, _read_time):
+        for change in changes:
+            if change.type.name == 'ADDED':
+                doc = change.document
+                doc_id = doc.id
+
+                if doc_id not in processed_docs:
+                    processed_docs.add(doc_id)
+
+                    data = doc.to_dict()
+                    gates = data.get('gates')
+                    num_qubits = data.get('num_qubits')
+                    num_clbits = data.get('num_clbits')
+
+                    if gates is not None and num_qubits is not None and num_clbits is not None:
+                        callback(doc_id, gates, num_qubits, num_clbits)
+
+    print("Starting Firebase listener for 'circuits' collection...")
+    print("Waiting for new documents...\n")
+
+    col_ref = db.collection('circuits')
+    col_watch = col_ref.on_snapshot(on_snapshot)
+
+    try:
+        while True:
+            time.sleep(1)
+    except KeyboardInterrupt:
+        print("\nStopping listener...")
+        col_watch.unsubscribe()
