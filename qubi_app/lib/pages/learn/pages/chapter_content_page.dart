@@ -25,7 +25,7 @@ class ChapterContentPage extends StatelessWidget {
           children: [
             ChapterContentTitle(chapter: chapter),
             const SizedBox(height: 12),
-            const ChapterContentContainer(),
+            ChapterContentContainer(chapter: chapter),
           ],
         ),
       ),

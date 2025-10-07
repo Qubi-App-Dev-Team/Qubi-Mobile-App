@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:qubi_app/pages/learn/models/chapter_content.dart';
+import 'package:qubi_app/pages/learn/models/chapter.dart';
 import 'package:qubi_app/pages/learn/components/chapter_content_box.dart';
+import 'package:qubi_app/pages/learn/pages/section_content_page.dart';
+import 'package:qubi_app/pages/learn/models/section_routes.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 //Widget which organizes all of the 3 sections of a given chapters page as well as their interactions
 //Interactions are scrolling, dropdown, and line extensions from Figma
 class ChapterDifficultySection extends StatefulWidget {
+  final Chapter chapter;
   final String difficulty;    // 'beginner' | 'intermediate' | 'advanced'
   final double completion;    // 0..1 (overall completion text on the row)
   final bool isFirst;
@@ -16,6 +20,7 @@ class ChapterDifficultySection extends StatefulWidget {
 
   const ChapterDifficultySection({
     super.key,
+    required this.chapter,
     required this.difficulty,
     required this.completion,
     required this.items,
@@ -62,6 +67,58 @@ class _ChapterDifficultySectionState extends State<ChapterDifficultySection> {
     // Bullet vertical metrics within the row
     final double bulletTop    = (_rowHeight - _bulletSize) / 2;
     final double bulletBottom = bulletTop + _bulletSize;
+
+    final contentList = Padding(
+      padding: EdgeInsets.only(left: (_bulletSize + 12) + 24, top: 8, bottom: 8),
+      child: Column(
+        children: [
+          for (int i = 0; i < widget.items.length; i++) ...[
+            InkWell(
+              borderRadius: BorderRadius.circular(12),
+              onTap: () {
+                final item = widget.items[i];
+                if (item.locked) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text("You haven't unlocked this section yet!"),
+                      behavior: SnackBarBehavior.floating,
+                      duration: Duration(seconds: 2),
+                    ),
+                  );
+                  return;
+                }
+                // ✅ Navigate using Chapter + ChapterContent + optional custom children
+                  final key = item.title.toLowerCase().replaceAll(' ', '_');
+
+                  final builder = sectionRoutes[key];
+                  final children = builder != null
+                      ? builder(widget.chapter, item)
+                      : const [
+                        SizedBox(height: 540)
+                      ];
+
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => SectionContentPage(
+                        chapter: widget.chapter,
+                        content: item,
+                        children: children,
+                      ),
+                    ),
+                  );
+              },
+              child: ChapterContentBox(
+                title: widget.items[i].title,
+                description: widget.items[i].description,
+                progress: widget.items[i].progress,
+                locked: widget.items[i].locked,
+              ),
+            ),
+            if (i != widget.items.length - 1) const SizedBox(height: 12),
+          ],
+        ],
+      ),
+    );
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: _hPadding),
@@ -174,26 +231,7 @@ class _ChapterDifficultySectionState extends State<ChapterDifficultySection> {
                   // EXPANDED CONTENT: 3 content boxes
                   AnimatedCrossFade(
                     firstChild: const SizedBox(height: 0),
-                    secondChild: Padding(
-                      padding: EdgeInsets.only(
-                        left: (_bulletSize + 12) + 24, // indent under the row
-                        top: 8,
-                        bottom: 8,
-                      ),
-                      child: Column(
-                        children: [
-                          for (int i = 0; i < widget.items.length; i++) ...[
-                            ChapterContentBox(
-                              title: widget.items[i].title,
-                              description: widget.items[i].description,
-                              progress: widget.items[i].progress,
-                              locked: widget.items[i].locked,
-                            ),
-                            if (i != widget.items.length - 1) const SizedBox(height: 12),
-                          ],
-                        ],
-                      ),
-                    ),
+                    secondChild: contentList, 
                     crossFadeState:
                         _expanded ? CrossFadeState.showSecond : CrossFadeState.showFirst,
                     duration: const Duration(milliseconds: 250),
