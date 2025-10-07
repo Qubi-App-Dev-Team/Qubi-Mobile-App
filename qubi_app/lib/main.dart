@@ -17,7 +17,6 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         //default color scheme - can change later
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-
         // Use Strawford as default text
         fontFamily: 'Strawford',
         textTheme: const TextTheme(
