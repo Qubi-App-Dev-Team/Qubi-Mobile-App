@@ -41,11 +41,11 @@ class ProfilePage extends StatelessWidget {
                   height: 36,
                   margin: const EdgeInsets.only(right: 12),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.85),
+                    color: Colors.white.withValues(alpha: 0.85),
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.06),
+                        color: Colors.black.withValues(alpha: 0.06),
                         blurRadius: 10,
                         offset: const Offset(0, 4),
                       ),
@@ -73,7 +73,7 @@ class ProfilePage extends StatelessWidget {
                 height:
                     1 /
                     MediaQuery.of(context).devicePixelRatio, // true hairline
-                color: Colors.black.withOpacity(0.25),
+                color: Colors.black.withValues(alpha: 0.25),
               ),
             ),
           ),
@@ -123,7 +123,7 @@ class ProfileCard extends StatelessWidget {
             'Bucky@qolour.io',
             style: TextStyle(
               fontSize: 15,
-              color: Colors.black.withOpacity(0.55),
+              color: Colors.black.withValues(alpha: 0.55),
               fontWeight: FontWeight.w500,
             ),
           ),

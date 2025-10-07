@@ -107,7 +107,7 @@ class _StoryPageState extends State<StoryPage> {
                               decoration: BoxDecoration(
                                 color: i <= _currentIndex
                                     ? Colors.black
-                                    : Colors.black.withOpacity(0.1),
+                                    : Colors.black.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(10),
                               ),
                             ),
