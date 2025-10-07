@@ -1,7 +1,11 @@
 import os
 from dotenv import load_dotenv
+
 from qiskit import QuantumCircuit
 from qiskit_ionq import IonQProvider
+
+import matplotlib
+matplotlib.use('Agg')  # Use non-GUI backend
 import matplotlib.pyplot as plt
 
 load_dotenv()
@@ -147,9 +151,9 @@ def create_histogram(counts, shots, title="Quantum Measurement Results", save_pa
     if save_path:
         plt.savefig(save_path, dpi=300, bbox_inches='tight')
         print(f"Histogram saved to: {save_path}")
-    
-    plt.show()
-    
+
+    plt.close(fig)
+
     return fig
 
 def print_circuit_info(circuit: QuantumCircuit):
