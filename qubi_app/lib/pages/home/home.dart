@@ -42,8 +42,8 @@ class HomePage extends StatelessWidget {
             height: 325,
             child: ListView(
               children: const [
-                QubiCard(title: "Qubi v1", qubiColor: Colors.green),
-                QubiCard(title: "Qubi v1", qubiColor: Colors.purple),
+                QubiCard(title: "Qubi v1", qubiColor: Color(0xFF66E3C4)),
+                QubiCard(title: "Qubi v1", qubiColor: Color(0xFF9D6CFF)),
                 QubiCard(title: "Qubi v1", qubiColor: Colors.blue),
               ],
             ),
@@ -99,12 +99,14 @@ class HomePage extends StatelessWidget {
               ],
             ),
           ),
-          // More features below
-          const Padding(
-            padding: EdgeInsets.all(16.0),
-            child: Text(
-              "Circuit Visualization",
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
+            width: double.infinity,
+            child: SvgPicture.asset(
+              'assets/images/circuit.svg',
+              height: 140, // adjust to fit your design
+              width: double.infinity,
+              fit: BoxFit.contain,
             ),
           ),
           Container(
