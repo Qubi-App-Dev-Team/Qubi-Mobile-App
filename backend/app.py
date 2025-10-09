@@ -149,4 +149,3 @@ async def delete_run(identifier: str):
 async def delete_circuit(identifier: str):
     db.collection("circuits").document(identifier).delete()
     return {"message": f"{identifier} is gone"}
-
