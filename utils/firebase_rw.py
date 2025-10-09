@@ -22,6 +22,34 @@ db = firestore.client()
 
 processed_docs = set()
 
+def add_results(doc_id, elapsed_time, results):
+    """
+    Add results to the 'runs' collection with a random document ID.
+
+    Args:
+        doc_id: The circuit document ID that was executed
+        results: The results from the quantum execution (Qiskit Result object)
+    """
+    runs_ref = db.collection('runs')
+
+    # Create a new document with auto-generated ID
+    new_run = runs_ref.document()
+
+    # Extract only the backend name and counts for Firestore compatibility
+    data = {
+        'circuit_id': doc_id,
+        'quantum_computer': results.backend_name,
+        'histogram': results.get_counts(),
+        'total_runtime': round(elapsed_time, 2)
+    }
+
+    # Set the data
+    new_run.set(data)
+
+    print(f"Results added to 'runs' collection with ID: {new_run.id}")
+    return new_run.id
+
+
 def listen_for_circuits(callback):
     """
     Listen for new circuit documents and call the callback function when one is added.

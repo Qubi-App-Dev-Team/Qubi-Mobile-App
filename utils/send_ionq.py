@@ -1,14 +1,19 @@
 import os
+import warnings
 from dotenv import load_dotenv
 
 from qiskit import QuantumCircuit
 from qiskit_ionq import IonQProvider
+from qiskit_ionq.exceptions import IonQTranspileLevelWarning
 
 import matplotlib
 matplotlib.use('Agg')  # Use non-GUI backend
 import matplotlib.pyplot as plt
 
 load_dotenv()
+
+# Suppress IonQ transpiler optimization level warning
+warnings.filterwarnings('ignore', category=IonQTranspileLevelWarning)
 
 def send_to_ionq(circuit: QuantumCircuit, shots: int = 1000, backend_name: str = "ionq_simulator"):
     """
