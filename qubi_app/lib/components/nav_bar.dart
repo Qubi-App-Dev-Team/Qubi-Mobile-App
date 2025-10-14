@@ -48,9 +48,9 @@ class _NavBarState extends State<NavBar> {
 
   @override
   Widget build(BuildContext context) {
-    // Get BottomNavigationBar height (default 56 if not specified)
-    double navBarHeight = kBottomNavigationBarHeight;
-    double iconWidth = navBarHeight * 75 / 48; // maintain aspect ratio
+    // default height of kBottomNavigationBarHeight is 56, then subtract some
+    double navBarHeight = kBottomNavigationBarHeight - 8;
+    double iconWidth = navBarHeight * 75 / 44; // maintain aspect ratio
 
     return Scaffold(
       body: _pages[_selectedIndex],
