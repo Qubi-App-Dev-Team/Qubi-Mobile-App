@@ -20,10 +20,10 @@ class _ThemeCollectionCardState extends State<ThemeCollectionCard> {
       decoration: BoxDecoration(
         color: const Color(0x190B1521),
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: Colors.white.withOpacity(0.6)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.6)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 12,
             offset: const Offset(0, 6),
           ),
@@ -45,7 +45,7 @@ class _ThemeCollectionCardState extends State<ThemeCollectionCard> {
                 '6/20',
                 style: TextStyle(
                   fontWeight: FontWeight.w600,
-                  color: Colors.black.withOpacity(0.45),
+                  color: Colors.black.withValues(alpha: 0.45),
                 ),
               ),
             ],
