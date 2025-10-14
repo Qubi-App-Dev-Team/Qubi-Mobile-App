@@ -43,9 +43,21 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
-  Widget _title() {
-    return const Text('Qubi Auth');
-  }
+ Widget _title() {
+  return Container(
+    color: Colors.teal, // pick any color
+    padding: const EdgeInsets.all(12),
+    child: const Text(
+      'Qubi App Login',
+      style: TextStyle(
+        color: Colors.white, // text color for contrast
+        fontSize: 22,
+        fontWeight: FontWeight.bold,
+      ),
+    ),
+  );
+}
+
 
   Widget _entryField(
     String title, TextEditingController controller,
@@ -54,12 +66,18 @@ class _LoginPageState extends State<LoginPage> {
       controller: controller,
       decoration: InputDecoration(
         labelText: title,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(
+            color: Colors.deepPurple,
+          ),
+        ),
       ),
     );
   }
 
   Widget _errorMessage() {
-    return Text(errorMessage == '' ? '' : 'Humm ? $errorMessage');
+    return Text(errorMessage == '' ? '' : 'Fail: $errorMessage');
   }
 
   Widget _submitButton() {
