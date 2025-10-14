@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:qubi_app/pages/learn/models/chapter_content.dart';
 import 'package:qubi_app/pages/learn/models/chapter.dart';
 import 'package:qubi_app/pages/learn/pages/section_content_page.dart';
-import 'package:qubi_app/pages/learn/models/section_routes.dart';
 import 'package:qubi_app/pages/learn/components/gradient_progress_bar.dart';
 import 'package:qubi_app/pages/learn/components/info_badge.dart';
+import 'package:qubi_app/pages/learn/models/renderer.dart';
 
 /// A simplified vertical list of section modules for a chapter (no difficulty groups).
 /// Each tile shows:
@@ -49,18 +49,20 @@ class _ChapterContentSectionState extends State<ChapterContentSection> {
                   if (proceed != true) return;
                 }
 
-                final key = content.title.toLowerCase().replaceAll(' ', '_');
-                final builder = sectionRoutes[key];
-                final children = builder != null
-                    ? builder(chapter, content)
-                    : const [SizedBox(height: 540)];
-
                 navigator.push(
                   MaterialPageRoute(
                     builder: (_) => SectionContentPage(
                       chapter: chapter,
                       content: content,
-                      children: children,
+                      totalPages: 3,
+                      buildPage: ({required chapter, required section, required pageNumber}) {
+                        return renderSectionPageFromCache(
+                          chapter: chapter,
+                          section: section,
+                          pageNumber: pageNumber,
+                        );
+                      },
+                      initialPage: 1,
                     ),
                   ),
                 );
