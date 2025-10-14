@@ -1,3 +1,5 @@
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:qubi_app/auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:qubi_app/pages/home/components/qubi_card.dart';
@@ -8,8 +10,24 @@ import 'package:qubi_app/pages/story/story_page.dart';
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
+  Future<void> signOut() async {
+    await Auth().signOut();
+  }
+
+  Widget _userUid(User? user) {
+    return Text(user?.email ?? 'User email');
+  }
+
+  Widget _signOutButton() {
+    return ElevatedButton(
+      onPressed: signOut,
+      child: const Text('Sign out'),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final User? user = Auth().currentUser;
     return Scaffold(
       backgroundColor: Color(0xFFE6EEF8),
       appBar: AppBar(
@@ -43,10 +61,12 @@ class HomePage extends StatelessWidget {
             SizedBox(
               height: 325,
               child: ListView(
-                children: const [
-                  QubiCard(title: "Qubi v1", qubiColor: Color(0xFF66E3C4)),
-                  QubiCard(title: "Qubi v1", qubiColor: Color(0xFF9D6CFF)),
-                  QubiCard(title: "Qubi v1", qubiColor: Colors.blue),
+                children: [
+                  _userUid(user),
+                  _signOutButton(),
+                  const QubiCard(title: "Qubi v1", qubiColor: Color(0xFF66E3C4)),
+                  const QubiCard(title: "Qubi v1", qubiColor: Color(0xFF9D6CFF)),
+                  const QubiCard(title: "Qubi v1", qubiColor: Colors.blue),
                 ],
               ),
             ),
