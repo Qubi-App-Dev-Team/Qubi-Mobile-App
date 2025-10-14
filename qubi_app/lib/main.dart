@@ -2,14 +2,13 @@ import 'package:flutter/material.dart';
 import 'components/nav_bar.dart'; // navigation bar
 import 'widget_tree.dart'; // widget tree for auth
 import 'package:firebase_core/firebase_core.dart'; // firebase core
-// import 'firebase_options.dart'; // firebase options
+import 'firebase_options.dart'; // firebase options
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
-  // await Firebase.initializeApp(
-  //   options: DefaultFirebaseOptions.currentPlatform,
-  // );
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   runApp(const MyApp());
 }
 

@@ -3,3 +3,7 @@ venv
 node_modules
 notes.txt
 __pycache__
+
+nodesource_setup.sh
+firebase.json
+firebase_options.dart
