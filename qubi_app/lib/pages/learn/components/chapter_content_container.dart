@@ -17,13 +17,13 @@ class ChapterContentContainer extends StatelessWidget {
         ChapterContentSection(
           chapter: chapter, // pass through
           items: const [
-            ChapterContent(title: 'Measurement', description: 'Discover the laws of a single qubit. earn how quantum particles behave when you try to...', progress: 1.0, locked: false),
-            ChapterContent(title: 'Entanglement', description: 'Dive into the fascinating world where two particles become linked, so that what...', progress: 0.26, locked: false),
-            ChapterContent(title: 'Unlock the rainbow visualizer', description: 'See entanglement in action.', progress: 0.0, locked: false),
-            ChapterContent(title: 'Rotation in entanglement', description: 'Understand how quantum gates manipulate qubits, and how these gates combine to...', locked: true),
-            ChapterContent(title: 'Measurements in entanglement', description: 'Explore famous algorithms like Grover’s and Shor’s, which show how quantum computers...', locked: true),
-            ChapterContent(title: 'Quantum Gates and Circuits', description: 'Build the logic of the quantum world.', locked: true),
-            ChapterContent(title: 'Quantum Decoherence and Noise', description: 'Why quantum systems are fragile.', locked: true),
+            ChapterContent(title: 'Measurement', description: 'Discover the laws of a single qubit. earn how quantum particles behave when you try to...', progress: 1.0, locked: false, number: 1),
+            ChapterContent(title: 'Entanglement', description: 'Dive into the fascinating world where two particles become linked, so that what...', progress: 0.26, locked: false, number: 2),
+            ChapterContent(title: 'Unlock the rainbow visualizer', description: 'See entanglement in action.', progress: 0.0, locked: false, number: 3),
+            ChapterContent(title: 'Rotation in entanglement', description: 'Understand how quantum gates manipulate qubits, and how these gates combine to...', locked: true, number: 4),
+            ChapterContent(title: 'Measurements in entanglement', description: 'Explore famous algorithms like Grover’s and Shor’s, which show how quantum computers...', locked: true, number: 5),
+            ChapterContent(title: 'Quantum Gates and Circuits', description: 'Build the logic of the quantum world.', locked: true, number: 6),
+            ChapterContent(title: 'Quantum Decoherence and Noise', description: 'Why quantum systems are fragile.', locked: true, number: 7),
           ],
         ),
         const SizedBox(height: 50),
