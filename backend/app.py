@@ -1,6 +1,6 @@
 import firebase_admin
 from pydantic import BaseModel
-from typing import Optional, Dict, Literal
+from typing import Any, Dict, List, Optional, Union, Literal
 from firebase_admin import firestore, credentials
 import os, json
 from dotenv import load_dotenv
@@ -49,6 +49,29 @@ class Circuit(BaseModel):
     classical: int
     qubit: int
     measure: Measurement
+
+# Dictionary for the type and content of a component (components will be used to build pages)
+class Component(BaseModel):
+    type: str
+    content: Optional[Union[str, Dict[str, Any]]] = None
+
+# Schema for a page in a section to store in db (each section stores a list of pages)
+class Page(BaseModel):
+    components: List[Component]
+
+# Schema for a section in a chapter to store in db (each chapter stores a list of sections)
+class Section(BaseModel):
+    title: str
+    description: str
+    # pages is a list of lists, where each inner list is a list of components
+    pages: List[Page]
+
+# Schema for lesson chapter to store in db 
+class Chapter(BaseModel):
+    title: str
+    diff: str
+    number: int
+    sections: List[Section]
 
 # Env creds
 load_dotenv()
@@ -102,6 +125,14 @@ async def post_circuit(circuit: Circuit):
     })
     return {"message": "Posted a new circuit."}
 
+# Posting a chapter - not sure if we'll need this but useful for testing purposes
+@app.post("/chapters/{identifier}")
+async def post_chapter(identifier: str, chapter: Chapter):
+    ref = db.collection("chapters").document()
+    ref.set(chapter.model_dump())
+    return {"message": f"Poster chapter '{identifier}' successfully"}
+
+
 # Read a run
 @app.get("/runs/{identifier}")
 async def get_run(identifier: str):
@@ -119,6 +150,15 @@ async def get_circuit(identifier: str):
         return circuit.to_dict()
     else:
         return {"error": "Circuit not found"}
+    
+# Read a chapter
+@app.get("/chapters/{identifier}")
+async def get_chapter(identifier: str):
+    chapter = db.collection("chapters").document(identifier).get()
+    if chapter.exists:
+        return chapter.to_dict()
+    else:
+        return {"error": "Chapter not found"}
 
 # Updating a run
 @app.put("/runs/{identifier}/{field}/{value}")
@@ -150,3 +190,9 @@ async def delete_circuit(identifier: str):
     db.collection("circuits").document(identifier).delete()
     return {"message": f"{identifier} is gone"}
 
+    
+# Deleting a chapter - not sure if we'll need this but useful for testing purposes
+@app.delete("/chapters/{identifier}") 
+async def delete_chapter(identifier: str):
+    db.collection("chapters").document(identifier).delete()
+    return {"message": f"{identifier} is gone"}
