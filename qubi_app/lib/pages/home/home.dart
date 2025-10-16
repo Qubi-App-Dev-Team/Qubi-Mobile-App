@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:qubi_app/pages/home/components/qubi_card.dart';
-import 'package:qubi_app/pages/home/run.dart';
-import 'package:qubi_app/pages/home/executor.dart';
-import 'package:qubi_app/pages/story/story_page.dart';
+import 'package:qubi_app/pages/home/components/circuit_section.dart';
+import 'package:qubi_app/pages/home/components/collapsible_section.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -11,10 +10,10 @@ class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color(0xFFE6EEF8),
+      backgroundColor: const Color(0xFFE6EEF8),
       appBar: AppBar(
-        backgroundColor: Color(0xFFE6EEF8),
-        title: Text(
+        backgroundColor: const Color(0xFFE6EEF8),
+        title: const Text(
           "My Qubis",
           style: TextStyle(fontSize: 25, fontWeight: FontWeight.w900),
         ),
@@ -24,199 +23,44 @@ class HomePage extends StatelessWidget {
             child: Row(
               children: [
                 _buildTopButton('assets/icons/Add.svg'),
-                const SizedBox(width: 8), // space between buttons
+                const SizedBox(width: 8),
                 _buildTopButton('assets/icons/Settings.svg'),
               ],
             ),
           ),
         ],
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1.0),
-          child: Container(color: Color(0xFFC7DDF0), height: 1.0),
+        bottom: const PreferredSize(
+          preferredSize: Size.fromHeight(1.0),
+          child: Divider(color: Color(0xFFC7DDF0), height: 1.0),
         ),
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            // limited-height scrollable list
-            SizedBox(height: 10),
-            SizedBox(
-              height: 325,
-              child: ListView(
-                children: const [
-                  QubiCard(title: "Qubi v1", qubiColor: Color(0xFF66E3C4)),
-                  QubiCard(title: "Qubi v1", qubiColor: Color(0xFF9D6CFF)),
-                  QubiCard(title: "Qubi v1", qubiColor: Colors.blue),
-                ],
-              ),
-            ),
-            Container(
-              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
-              padding: const EdgeInsets.all(12),
-              width: double.infinity,
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  begin: Alignment.bottomLeft, // diagonal start
-                  end: Alignment.topRight, // diagonal end
-                  colors: [
-                    Color(0xFF6525FE), // purple
-                    Color(0xFFF25F1C), // orange
-                  ],
-                ),
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.10),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    "Last shake - IBM Hanoi (32 qubits)",
-                    style: TextStyle(color: Colors.white, fontSize: 16),
-                  ),
-                  SizedBox(height: 6),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      // "Read Report" → RunPage()
-                      GestureDetector(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const RunPage(),
-                            ),
-                          );
-                        },
-                        child: buildGradientButton("Read Report", true),
-                      ),
-                      const SizedBox(width: 12),
 
-                      // "Skip to Story" (go to story page)
-                      GestureDetector(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const StoryPage(),
-                            ),
-                          );
-                        },
-                        child: buildGradientButton("Skip to Story", false),
-                      ),
-                      
+      // 🧩 Use Stack so the drawer slides up from beneath the main content
+      body: Stack(
+        children: [
+          // 🟢 Main scrollable content
+          SingleChildScrollView(
+            child: Column(
+              children: [
+                const SizedBox(height: 10),
+                SizedBox(
+                  height: 325,
+                  child: ListView(
+                    children: const [
+                      QubiCard(title: "Qubi v1", qubiColor: Color(0xFF66E3C4)),
+                      QubiCard(title: "Qubi v1", qubiColor: Color(0xFF9D6CFF)),
+                      QubiCard(title: "Qubi v1", qubiColor: Colors.blue),
                     ],
                   ),
-                ],
-              ),
-            ),
-            Container(
-              margin: const EdgeInsets.only(left : 16, right: 16, top: 10, bottom: 5),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text('Pending Circuit', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w900, color: Colors.black)),
-                  Text('View all >', style: TextStyle(fontSize: 15, color: Colors.black54)),
-                ],
-              ),
-            ),
-            Container(
-              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
-              width: double.infinity,
-              child: SvgPicture.asset(
-                'assets/images/circuit1.svg',
-                height: 140, // adjust to fit your design
-                width: double.infinity,
-                fit: BoxFit.contain,
-              ),
-            ),
-            Container(
-              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
-              padding: const EdgeInsets.all(12),
-              width: double.infinity,
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  begin: Alignment.bottomLeft, // diagonal start
-                  end: Alignment.topRight, // diagonal end
-                  colors: [
-                    Color(0xFF6525FE), // purple
-                    Color(0xFF1A91FC), // blue
-                  ],
                 ),
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.10),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    "Select executor",
-                    style: TextStyle(color: Colors.white, fontSize: 16),
-                  ),
-                  SizedBox(height: 6),
-                  GestureDetector(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const ExecutorPage(),
-                        ),
-                      );
-                      debugPrint('hello');
-                      // TODO: navigate to next page here
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 8,
-                      ),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.bottomLeft, // diagonal start
-                          end: Alignment.topRight,
-                          colors: [
-                            Colors.black.withValues(alpha: .20),
-                            Color(0xFFF7FAFC).withValues(alpha: .20),
-                          ],
-                        ),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: const [
-                          Text(
-                            "IBM Hanoi (32 qubits)",
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 14.5,
-                              fontWeight: FontWeight.w300,
-                            ),
-                          ),
-                          Icon(
-                            Icons.arrow_forward_ios,
-                            size: 16,
-                            color: Colors.white,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+                const SizedBox(height: 100), // space before drawer starts
+              ],
             ),
-          ],
-        ),
+          ),
+
+          // 🟣 Bottom drawer
+          const CircuitBottomDrawer(),
+        ],
       ),
     );
   }
@@ -227,13 +71,13 @@ class HomePage extends StatelessWidget {
       width: 38,
       child: Container(
         decoration: BoxDecoration(
-          color: Color(0xFFFFFFFF),
+          color: const Color(0xFFFFFFFF),
           borderRadius: BorderRadius.circular(20),
         ),
-        margin: EdgeInsets.all(1),
+        margin: const EdgeInsets.all(1),
         child: SvgPicture.asset(
           assetPath,
-          color: Color(0xff000000),
+          color: const Color(0xff000000),
           width: 20,
           height: 20,
           fit: BoxFit.scaleDown,
@@ -248,9 +92,8 @@ class HomePage extends StatelessWidget {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(30),
         border: outlined ? Border.all(color: Colors.white, width: 1.5) : null,
-        color: outlined
-            ? Colors.transparent
-            : Colors.white.withValues(alpha: 0.2),
+        color:
+            outlined ? Colors.transparent : Colors.white.withValues(alpha: 0.2),
       ),
       child: Row(
         children: [
@@ -269,6 +112,7 @@ class HomePage extends StatelessWidget {
     );
   }
 }
+
 
 class GradientIcon extends StatelessWidget {
   final IconData icon;
