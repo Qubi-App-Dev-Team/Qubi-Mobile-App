@@ -15,6 +15,7 @@ class _CircuitBottomDrawerState extends State<CircuitBottomDrawer> {
 
   void _toggleDrawer() {
     setState(() => _isExpanded = !_isExpanded);
+    print("toggle pressed");
     _controller.animateTo(
       _isExpanded ? 0.75 : _peekHeight, //  drawer expands or collapses
       duration: const Duration(milliseconds: 400),
