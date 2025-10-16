@@ -71,6 +71,7 @@ class Chapter(BaseModel):
     title: str
     diff: str
     number: int
+    version: int 
     sections: List[Section]
 
 # Env creds
@@ -130,8 +131,7 @@ async def post_circuit(circuit: Circuit):
 async def post_chapter(identifier: str, chapter: Chapter):
     ref = db.collection("chapters").document()
     ref.set(chapter.model_dump())
-    return {"message": f"Poster chapter '{identifier}' successfully"}
-
+    return {"message": f"Posted chapter '{identifier}' successfully"}
 
 # Read a run
 @app.get("/runs/{identifier}")
@@ -190,7 +190,6 @@ async def delete_circuit(identifier: str):
     db.collection("circuits").document(identifier).delete()
     return {"message": f"{identifier} is gone"}
 
-    
 # Deleting a chapter - not sure if we'll need this but useful for testing purposes
 @app.delete("/chapters/{identifier}") 
 async def delete_chapter(identifier: str):
