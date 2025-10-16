@@ -8,11 +8,13 @@ class ChapterContent{
   final String description;
   final double progress; // 0..1
   final bool locked;
+  final int number;
 
   const ChapterContent({
     required this.title,
     required this.description,
     this.progress = 0.0,
-    this.locked = true,
+    required this.locked,
+    required this.number,
   });
 }
