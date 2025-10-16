@@ -66,7 +66,7 @@ class QubiCard extends StatelessWidget {
                   Expanded(child: QubiGateButton(label: "Y")),
                   Expanded(child: QubiGateButton(label: "Z")),
                   Expanded(child: QubiGateButton(label: "T")),
-                  Expanded(child: QubiGateButton(label: "T")),
+                  Expanded(child: QubiGateButton(label: "T*")),
                   Expanded(child: QubiGateButton(label: "H", topRight: true)),
                 ],
               ),
