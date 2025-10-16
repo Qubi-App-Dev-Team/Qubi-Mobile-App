@@ -4,6 +4,7 @@ import 'package:qubi_app/pages/home/login.dart';
 import 'package:qubi_app/pages/home/home.dart';
 import 'package:firebase_auth/firebase_auth.dart' hide EmailAuthProvider;
 import 'package:firebase_ui_auth/firebase_ui_auth.dart';
+import 'package:firebase_ui_oauth_google/firebase_ui_oauth_google.dart';
 
 class WidgetTree extends StatefulWidget {
   const WidgetTree ({Key? key}) : super(key: key);
@@ -20,7 +21,7 @@ class _WidgetTreeState extends State<WidgetTree> {
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
           return SignInScreen(                                         
-            providers: [EmailAuthProvider()],
+            providers: [EmailAuthProvider(), GoogleProvider(clientId: "YOUR_GOOGLE_CLIENT_ID")],
             headerBuilder: (context, constraints, shrinkOffset) {
               return Padding(
                 padding: const EdgeInsets.all(20),
@@ -46,22 +47,4 @@ class _WidgetTreeState extends State<WidgetTree> {
       },
     );
   }
-
-  // Widget build(BuildContext context) {
-  //   return StreamBuilder<User?>(
-  //     stream: Auth().authStateChanges,
-  //     builder: (context, snapshot) {
-  //       if (snapshot.connectionState == ConnectionState.active) {
-  //         final User? user = snapshot.data;
-  //         return user == null ? const LoginPage() : const HomePage();
-  //       } else {
-  //         return const Scaffold(
-  //           body: Center(
-  //             child: CircularProgressIndicator(),
-  //           ),
-  //         );
-  //       }
-  //     },
-  //   );
-  // }
 }
