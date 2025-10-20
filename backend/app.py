@@ -73,6 +73,21 @@ class Chapter(BaseModel):
     number: int
     sections: List[Section]
 
+class SectionProgress(BaseModel):
+    version: int
+    lastPage: int
+
+class ChapterProgress(BaseModel):
+    sections: List[SectionProgress]
+    lastSection: int
+
+# Schema for user to store in db
+class User(BaseModel):
+    number: int
+    progress: int
+    content: List[ChapterProgress]
+
+
 # Env creds
 load_dotenv()
 firebase_creds = os.getenv("FIREBASE_CREDENTIALS")
@@ -196,3 +211,24 @@ async def delete_circuit(identifier: str):
 async def delete_chapter(identifier: str):
     db.collection("chapters").document(identifier).delete()
     return {"message": f"{identifier} is gone"}
+
+@app.post("/users/{identifier}")
+async def post_user(identifier: str, user: User):
+    ref = db.collection("users").document()
+    ref.set(user.model_dump())
+    return {"message": f"Posted user '{identifier}' successfully"}
+
+@app.delete("/users/{identifier}") 
+async def delete_user(identifier: str):
+    db.collection("users").document(identifier).delete()
+    return {"message": f"{identifier} is gone"}
+
+
+# Updating a user
+@app.put("/users/{identifier}/{field}/{value}")
+async def update_user(identifier: str, field: str, value: str):
+    document = db.collection("users").document(identifier)
+    document.update({
+        field: value
+    })
+    return {"message": "It worked"}
