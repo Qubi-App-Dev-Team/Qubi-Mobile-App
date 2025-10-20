@@ -63,6 +63,7 @@ class Page(BaseModel):
 class Section(BaseModel):
     title: str
     description: str
+    version: int
     # pages is a list of lists, where each inner list is a list of components
     pages: List[Page]
 
@@ -70,8 +71,7 @@ class Section(BaseModel):
 class Chapter(BaseModel):
     title: str
     diff: str
-    number: int
-    version: int 
+    number: int 
     sections: List[Section]
 
 # Env creds
