@@ -79,8 +79,12 @@ class CircuitSection extends StatelessWidget {
 
         // 🔹 Pending circuit header
         Container(
-          margin:
-              const EdgeInsets.only(left: 16, right: 16, top: 10, bottom: 5),
+          margin: const EdgeInsets.only(
+            left: 16,
+            right: 16,
+            top: 10,
+            bottom: 5,
+          ),
           child: const Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -151,7 +155,6 @@ class CircuitSection extends StatelessWidget {
                       builder: (context) => const ExecutorPage(),
                     ),
                   );
-                  debugPrint('hello');
                 },
                 child: Container(
                   padding: const EdgeInsets.symmetric(
@@ -189,6 +192,54 @@ class CircuitSection extends StatelessWidget {
                   ),
                 ),
               ),
+
+              const SizedBox(height: 10),
+
+              // 🔸 Run Pending Circuit Button
+              GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const RunPage()),
+                  );
+                  debugPrint('Run pending circuit pressed');
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.bottomLeft,
+                      end: Alignment.topRight,
+                      colors: [
+                        Colors.black.withValues(alpha: .20),
+                        const Color(0xFFF7FAFC).withValues(alpha: .20),
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        "Run Pending Circuit",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 14.5,
+                          fontWeight: FontWeight.w300,
+                        ),
+                      ),
+                      Icon(
+                        Icons.play_arrow_rounded,
+                        size: 20,
+                        color: Colors.white,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ],
           ),
         ),
@@ -218,11 +269,7 @@ class CircuitSection extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 4),
-          const Icon(
-            Icons.arrow_forward_ios,
-            size: 12,
-            color: Colors.white,
-          ),
+          const Icon(Icons.arrow_forward_ios, size: 12, color: Colors.white),
         ],
       ),
     );
