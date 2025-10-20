@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'components/nav_bar.dart'; // navigation bar
-import 'widget_tree.dart'; // widget tree for auth
+import 'auth_gate.dart'; // widget tree for auth
 import 'package:firebase_core/firebase_core.dart'; // firebase core
 import 'firebase_options.dart'; // firebase options
+import 'package:flutter_dotenv/flutter_dotenv.dart'; // dotenv for env variables
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await dotenv.load(fileName: ".env");
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
@@ -31,7 +33,9 @@ class MyApp extends StatelessWidget {
           bodyMedium: TextStyle(fontFamily: 'Strawford'),
         ),
       ),
-      home: const WidgetTree(),
+      home: const AuthGate(),
     );
   }
 }
+
+// THIS MIGHT WORK I HAVE TO GET SIGN IN AND CLEANING UP WORK + THE EDGE CASE FROM CHAT HOLY SHIT
