@@ -143,7 +143,7 @@ class CircuitSection extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text(
-                "Select executor",
+                "Select & Run",
                 style: TextStyle(color: Colors.white, fontSize: 16),
               ),
               const SizedBox(height: 6),
@@ -213,10 +213,7 @@ class CircuitSection extends StatelessWidget {
                     gradient: LinearGradient(
                       begin: Alignment.bottomLeft,
                       end: Alignment.topRight,
-                      colors: [
-                        Colors.black.withValues(alpha: .20),
-                        const Color(0xFFF7FAFC).withValues(alpha: .20),
-                      ],
+                      colors: [Color(0xFFFF3B30), Color(0xFFFFC107)],
                     ),
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -228,7 +225,7 @@ class CircuitSection extends StatelessWidget {
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 14.5,
-                          fontWeight: FontWeight.w300,
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
                       Icon(
