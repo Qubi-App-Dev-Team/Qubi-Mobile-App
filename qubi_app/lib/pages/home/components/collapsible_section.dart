@@ -8,34 +8,62 @@ class CircuitBottomDrawer extends StatefulWidget {
   State<CircuitBottomDrawer> createState() => _CircuitBottomDrawerState();
 }
 
-class _CircuitBottomDrawerState extends State<CircuitBottomDrawer> {
-  final DraggableScrollableController _controller =
-      DraggableScrollableController();
-  bool _isExpanded = false;
+class _CircuitBottomDrawerState extends State<CircuitBottomDrawer> with TickerProviderStateMixin {
+  double _sheetPosition = 0.05; // start peek
+  final double _dragSensitivity = 600;
 
-  void _toggleDrawer() {
-    setState(() => _isExpanded = !_isExpanded);
-    print("toggle pressed");
-    _controller.animateTo(
-      _isExpanded ? 0.75 : _peekHeight, //  drawer expands or collapses
-      duration: const Duration(milliseconds: 400),
-      curve: Curves.easeInOut,
-    );
+  static const double _peek = 0.05;
+  static const double _mid = 0.48;
+  static const double _full = 0.75;
+
+  late final AnimationController _animController;
+  late Animation<double> _anim;
+
+  @override
+  void initState() {
+    super.initState();
+    _animController = AnimationController(vsync: this, duration: const Duration(milliseconds: 350));
+    _anim = Tween<double>(begin: _sheetPosition, end: _sheetPosition).animate(
+      CurvedAnimation(parent: _animController, curve: Curves.easeInOut),
+    )..addListener(() {
+        setState(() {
+          _sheetPosition = _anim.value;
+        });
+      });
   }
 
-  static const double _peekHeight = 0.04;
+  @override
+  void dispose() {
+    _animController.dispose();
+    super.dispose();
+  }
+
+  // 🟢 Toggle order: peek → full → mid → peek
+  void _toggleDrawer() {
+    double target;
+    if ((_sheetPosition - _peek).abs() < 0.02) {
+      target = _full;
+    } else if ((_sheetPosition - _full).abs() < 0.02) {
+      target = _mid;
+    } else {
+      target = _peek;
+    }
+
+    // Animate smoothly
+    _anim = Tween<double>(begin: _sheetPosition, end: target).animate(
+      CurvedAnimation(parent: _animController, curve: Curves.easeInOut),
+    );
+    _animController.forward(from: 0);
+  }
 
   @override
   Widget build(BuildContext context) {
     return DraggableScrollableSheet(
-      controller: _controller,
-      initialChildSize: _peekHeight, // initial visible height
-      minChildSize: _peekHeight,     // prevents hiding completely
-      maxChildSize: 0.75,
-      snap: true,
-      builder: (context, scrollController) {
+      initialChildSize: _sheetPosition,
+      minChildSize: _peek,
+      maxChildSize: _full,
+      builder: (BuildContext context, ScrollController scrollController) {
         return Container(
-          width: double.infinity,
           decoration: const BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
@@ -47,31 +75,47 @@ class _CircuitBottomDrawerState extends State<CircuitBottomDrawer> {
               ),
             ],
           ),
-          child: SingleChildScrollView(
-            controller: scrollController,
-            child: Column(
-              children: [
-                // Top tab
-                SizedBox(height: 2),
-                GestureDetector(
-                  onTap: _toggleDrawer,
+          child: Column(
+            children: [
+              // 🟣 Top handle (tap + drag)
+              GestureDetector(
+                onTap: _toggleDrawer,
+                onVerticalDragUpdate: (details) {
+                  setState(() {
+                    _sheetPosition -= details.delta.dy / _dragSensitivity;
+                    _sheetPosition = _sheetPosition.clamp(_peek, _full);
+                  });
+                },
+                child: Container(
+                  width: double.infinity,
+                  color: Colors.transparent,
+                  alignment: Alignment.center,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
                   child: Container(
-                    margin: const EdgeInsets.only(top: 8, bottom: 12),
                     width: 40,
                     height: 5,
                     decoration: BoxDecoration(
-                      color: Color(0xFFC7DDF0),
+                      color: const Color(0xFFC7DDF0),
                       borderRadius: BorderRadius.circular(3),
                     ),
                   ),
                 ),
+              ),
 
-                // Drawer Content
-                SizedBox(height: 2),
-                const CircuitSection(),
-                const SizedBox(height: 20),
-              ],
-            ),
+              // 🧩 Scrollable drawer body
+              Flexible(
+                child: SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  child: Column(
+                    children: const [
+                      SizedBox(height: 8),
+                      CircuitSection(),
+                      SizedBox(height: 20),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
         );
       },
