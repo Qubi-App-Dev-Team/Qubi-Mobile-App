@@ -49,6 +49,33 @@ def add_results(doc_id, elapsed_time, results):
     print(f"Results added to 'runs' collection with ID: {new_run.id}")
     return new_run.id
 
+def get_circuit_by_id(circuit_id):
+    """
+    Get a circuit document by its ID.
+
+    Args:
+        circuit_id: The ID of the circuit document to retrieve
+
+    Returns:
+        A tuple of (gates, num_qubits, num_clbits) or None if not found
+    """
+    doc_ref = db.collection('circuits').document(circuit_id)
+    doc = doc_ref.get()
+
+    if not doc.exists:
+        print(f"Error: Circuit with ID '{circuit_id}' not found")
+        return None
+
+    data = doc.to_dict()
+    gates = data.get('gates')
+    num_qubits = data.get('num_qubits')
+    num_clbits = data.get('num_clbits')
+
+    if gates is None or num_qubits is None or num_clbits is None:
+        print(f"Error: Circuit '{circuit_id}' is missing required fields")
+        return None
+
+    return (gates, num_qubits, num_clbits)
 
 def listen_for_circuits(callback):
     """
