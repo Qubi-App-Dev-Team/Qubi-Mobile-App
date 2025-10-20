@@ -7,13 +7,17 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart'; // dotenv for env variables
 
 import 'package:qubi_app/main.dart';
 
 void main() {
   testWidgets('Counter increments smoke test', (WidgetTester tester) async {
     // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+    await dotenv.load(fileName: ".env");
+    final clientId = dotenv.env['IOS_CLIENT_ID'] ?? '';
+
+    await tester.pumpWidget(MyApp(clientId: clientId));
 
     // Verify that our counter starts at 0.
     expect(find.text('0'), findsOneWidget);
