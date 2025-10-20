@@ -8,14 +8,15 @@ import 'package:flutter_dotenv/flutter_dotenv.dart'; // dotenv for env variables
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: ".env");
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
-  runApp(const MyApp());
+  final clientId = dotenv.env['IOS_CLIENT_ID'] ?? '';
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  runApp(MyApp(clientId: clientId));
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final String clientId;
+
+  const MyApp({super.key, required this.clientId});
 
   // This widget is the root of your application.
   @override
@@ -33,9 +34,7 @@ class MyApp extends StatelessWidget {
           bodyMedium: TextStyle(fontFamily: 'Strawford'),
         ),
       ),
-      home: const AuthGate(),
+      home: AuthGate(clientId: clientId),
     );
   }
 }
-
-// THIS MIGHT WORK I HAVE TO GET SIGN IN AND CLEANING UP WORK + THE EDGE CASE FROM CHAT HOLY SHIT
