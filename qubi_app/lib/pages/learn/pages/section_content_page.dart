@@ -127,7 +127,7 @@ class _SectionContentPageState extends State<SectionContentPage> {
                 totalPages: widget.totalPages,
                 onPrev: _goPrev,
                 onNext: _goNext,
-                height: 56,                 // <-- NEW: smaller, fixed height
+                height: 65,                 // <-- NEW: smaller, fixed height
               ),
             ),
           ],
