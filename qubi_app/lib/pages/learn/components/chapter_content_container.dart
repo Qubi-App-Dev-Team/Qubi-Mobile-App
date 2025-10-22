@@ -2,32 +2,60 @@ import 'package:flutter/material.dart';
 import 'package:qubi_app/pages/learn/models/chapter.dart';
 import 'package:qubi_app/pages/learn/models/chapter_content.dart';
 import 'package:qubi_app/pages/learn/components/chapter_content_section.dart';
+import 'package:qubi_app/pages/learn/bloc/chapter_data_store.dart';
 
-//Container component for the individual topics within a chapter (beginner, intermediate, advanced)
+/// Container component for the individual sections within a chapter.
+/// Dynamically loads sections from the data store using the chapter number.
 class ChapterContentContainer extends StatelessWidget {
-  final Chapter chapter; // NEW: so sections can navigate using the chapter model
+  final Chapter chapter;
 
   const ChapterContentContainer({super.key, required this.chapter});
 
   @override
   Widget build(BuildContext context) {
+    return FutureBuilder<List<ChapterContent>>(
+      future: ChapterDataStore.loadAllSections(chapterNum: chapter.number),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Padding(
+            padding: EdgeInsets.symmetric(vertical: 32),
+            child: Center(child: CircularProgressIndicator()),
+          );
+        }
 
-    return Column(
-      children: [
-        ChapterContentSection(
-          chapter: chapter, // pass through
-          items: const [
-            ChapterContent(title: 'Measurement', description: 'Discover the laws of a single qubit. earn how quantum particles behave when you try to...', progress: 1.0, locked: false, number: 1),
-            ChapterContent(title: 'Entanglement', description: 'Dive into the fascinating world where two particles become linked, so that what...', progress: 0.26, locked: false, number: 2),
-            ChapterContent(title: 'Unlock the rainbow visualizer', description: 'See entanglement in action.', progress: 0.0, locked: false, number: 3),
-            ChapterContent(title: 'Rotation in entanglement', description: 'Understand how quantum gates manipulate qubits, and how these gates combine to...', locked: true, number: 4),
-            ChapterContent(title: 'Measurements in entanglement', description: 'Explore famous algorithms like Grover’s and Shor’s, which show how quantum computers...', locked: true, number: 5),
-            ChapterContent(title: 'Quantum Gates and Circuits', description: 'Build the logic of the quantum world.', locked: true, number: 6),
-            ChapterContent(title: 'Quantum Decoherence and Noise', description: 'Why quantum systems are fragile.', locked: true, number: 7),
+        if (snapshot.hasError) {
+          return Padding(
+            padding: const EdgeInsets.all(24),
+            child: Text(
+              'Failed to load sections.\n${snapshot.error}',
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 16),
+            ),
+          );
+        }
+
+        final items = snapshot.data ?? const <ChapterContent>[];
+        if (items.isEmpty) {
+          return const Padding(
+            padding: EdgeInsets.all(24),
+            child: Text(
+              'No sections available yet.',
+              style: TextStyle(fontSize: 16),
+              textAlign: TextAlign.center,
+            ),
+          );
+        }
+
+        return Column(
+          children: [
+            ChapterContentSection(
+              chapter: chapter,
+              items: items,
+            ),
+            const SizedBox(height: 50),
           ],
-        ),
-        const SizedBox(height: 50),
-      ],
+        );
+      },
     );
   }
 }

@@ -8,9 +8,7 @@ import 'package:qubi_app/pages/learn/components/section_page_nav_bar.dart';
 
 /// You provide a function that builds the page body widgets for a given chapter/section/page.
 /// This is where you plug in the renderer we built earlier that reads from your cache/router.
-/// For example, you can pass a closure that calls:
-///   renderSectionPageFromCache(chapter: chapter, section: section, pageNumber: n)
-typedef SectionPageBuilder = List<Widget> Function({
+typedef SectionPageBuilder = Future<List<Widget>> Function({
   required Chapter chapter,
   required ChapterContent section,
   required int pageNumber,
@@ -24,7 +22,7 @@ class SectionContentPage extends StatefulWidget {
   final int totalPages;                // total number of pages in this section
   final int initialPage;               // 1-based initial page (default 1)
 
-  /// Builder wired to your renderer/cache lookup
+  /// Builder wired to your renderer/cache lookup (ASYNC)
   final SectionPageBuilder buildPage;
 
   const SectionContentPage({
@@ -59,53 +57,83 @@ class _SectionContentPageState extends State<SectionContentPage> {
     setState(() => _currentPage++);
   }
 
+  Future<List<Widget>> _loadCurrentPage() {
+    return widget.buildPage(
+      chapter: widget.chapter,
+      section: widget.content,
+      pageNumber: _currentPage,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final topInset = MediaQuery.of(context).padding.top + kToolbarHeight;
-
-    // Build the page body using the injected renderer callback
-    final children = widget.buildPage(
-      chapter: widget.chapter,
-      section: widget.content, // assumes ChapterContent has a `number`
-      pageNumber: _currentPage,
-    );
 
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: SectionContentHeader(chapterNumber: widget.chapter.number),
       body: AppBackdrop(
-        child: ListView(
-          padding: EdgeInsets.only(top: topInset),
+        child: Column(
           children: [
-            // Title bar: top (black) = chapter title, big bold = section title
-            SectionContentTitle(
-              chapterTitle: widget.chapter.title,
-              sectionTitle: widget.content.title,
+            // scrollable content
+            Expanded(
+              child: ListView(
+                padding: EdgeInsets.only(top: topInset),
+                children: [
+                  SectionContentTitle(
+                    chapterTitle: widget.chapter.title,
+                    sectionTitle: widget.content.title,
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Your async-rendered body
+                  FutureBuilder<List<Widget>>(
+                    key: ValueKey(_currentPage),
+                    future: _loadCurrentPage(),
+                    builder: (context, snap) {
+                      if (snap.connectionState == ConnectionState.waiting) {
+                        return const Padding(
+                          padding: EdgeInsets.all(24),
+                          child: Center(child: CircularProgressIndicator()),
+                        );
+                      }
+                      if (snap.hasError) {
+                        return Padding(
+                          padding: const EdgeInsets.all(24),
+                          child: Text('Failed to load page: ${snap.error}'),
+                        );
+                      }
+                      final children = snap.data ?? const <Widget>[];
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: _padAndSpace(children),
+                      );
+                    },
+                  ),
+
+                  const SizedBox(height: 16), // a little breathing room above the divider
+                ],
+              ),
             ),
 
-            const SizedBox(height: 16),
+            // thin divider always just above the nav bar
+            Container(height: 1, color: Colors.black.withValues(alpha:0.1)),
 
-            // Body for the current page
-            ..._padAndSpace(children),
-
-            const SizedBox(height: 2),
-
-            // subtle divider above the nav bar
-            Container(
-              height: 1,
-              color: Colors.black.withValues(alpha:0.1),
-            ),
-
-            // Page nav bar (transparent, styled like your existing one)
-            SectionPageNavBar(
-              currentPage: _currentPage,
-              totalPages: widget.totalPages,
-              onPrev: _goPrev,
-              onNext: _goNext,
+            // fixed-height bottom nav, kept above system insets
+            SafeArea(
+              top: false,
+              child: SectionPageNavBar(
+                currentPage: _currentPage,
+                totalPages: widget.totalPages,
+                onPrev: _goPrev,
+                onNext: _goNext,
+                height: 56,                 // <-- NEW: smaller, fixed height
+              ),
             ),
           ],
         ),
       ),
+
     );
   }
 

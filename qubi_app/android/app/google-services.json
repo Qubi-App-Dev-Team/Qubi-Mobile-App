@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "1089050438573",
+    "project_id": "qubi-app-dev",
+    "storage_bucket": "qubi-app-dev.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1089050438573:android:193dec3d9a44b1fc180f24",
+        "android_client_info": {
+          "package_name": "com.example.qubi_app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1089050438573-kv3h229p7bscg4mp4ogtdhth47e2r396.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDoNC-YQ14Seej11FBD-mqifOYU5WPkOvw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1089050438573-kv3h229p7bscg4mp4ogtdhth47e2r396.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "1089050438573-6s9rr4vt3g43uoge8p0m94kqbridk09q.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.qubiApp"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
