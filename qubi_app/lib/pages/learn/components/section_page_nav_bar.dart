@@ -6,6 +6,7 @@ class SectionPageNavBar extends StatelessWidget {
   final VoidCallback? onPrev;
   final VoidCallback? onNext;
   final Color backgroundColor;
+  final double height;
 
   const SectionPageNavBar({
     super.key,
@@ -14,13 +15,14 @@ class SectionPageNavBar extends StatelessWidget {
     this.onPrev,
     this.onNext,
     this.backgroundColor = const Color(0xFFE6EEF8), // UI stays transparent by default
+    this.height = 72
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12),
-      height: 72,
+      height: height,
       color: Colors.transparent,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,

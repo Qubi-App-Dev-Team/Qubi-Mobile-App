@@ -17,6 +17,13 @@ class ContentStyles {
     fontWeight: FontWeight.bold,
   );
 
+    static const TextStyle buttonText = TextStyle(
+    color: Colors.black87,
+    fontSize: 16,
+    height: 1.5,
+    fontWeight: FontWeight.bold,
+  );
+
   // Card visuals (experiment card / prompt)
   static const Color cardBorder = Color(0xFFD6DEE9);
   static const Color backgroundGray = Color(0xFFE6EEF8);

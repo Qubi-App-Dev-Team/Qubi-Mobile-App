@@ -7,9 +7,10 @@ import 'package:qubi_app/pages/learn/styles/content_styles.dart';
 import 'package:qubi_app/pages/learn/components/section_page_header.dart';
 import 'package:qubi_app/pages/learn/components/section_page_paragraph.dart';
 import 'package:qubi_app/pages/learn/components/section_page_network_image.dart';
-
+import 'package:qubi_app/pages/learn/components/prompt_option_button.dart';
 // Your router spec cache: Map<String, List<Map<String, dynamic>>>
 import 'package:qubi_app/pages/learn/models/section_routes.dart';
+import 'package:flutter/foundation.dart';
 
 /// "chapter.section.page" (e.g., "1.2.3")
 String sectionPageKey({
@@ -21,11 +22,12 @@ String sectionPageKey({
 
 /// Converts cached specs -> Widgets for a given chapter/section/page.
 /// If no specs are found, returns [SizedBox(height: 540)].
-List<Widget> renderSectionPageFromCache({
+/// Tolerant of unknown/malformed blocks: skips them without failing the whole page.
+Future<List<Widget>> renderSectionPageFromCache({
   required Chapter chapter,
   required ChapterContent section,
   required int pageNumber,
-}) {
+}) async {
   final key = sectionPageKey(
     chapterNumber: chapter.number,
     sectionNumber: section.number,
@@ -40,74 +42,92 @@ List<Widget> renderSectionPageFromCache({
   final widgets = <Widget>[];
 
   for (final block in specs) {
-    if (block.isEmpty) continue;
-    final type = block.keys.first;
-    final value = block[type];
+    try {
+      if (block.isEmpty) continue;
 
-    switch (type) {
-      case 'header': {
-        final text = (value ?? '').toString().trim();
-        if (text.isEmpty) break;
-        widgets
-          ..add(SectionPageHeader(text: text))
-          ..add(const SizedBox(height: 24));
-        break;
-      }
+      // Normalize type & value keys
+      final String type = _readType(block);
+      final dynamic value = _readValue(block);
 
-      case 'paragraph': {
-        final text = (value ?? '').toString().trim();
-        if (text.isEmpty) break;
-        widgets
-          ..add(SectionPageParagraph(text: text))
-          ..add(const SizedBox(height: 24));
-        break;
-      }
-
-      case 'image': {
-        final url = (value ?? '').toString().trim();
-        if (url.isEmpty) break;
-        widgets
-          ..add(SectionPageNetworkImage(url: url))
-          ..add(const SizedBox(height: 24));
-        break;
-      }
-
-      case 'prompt': {
-        // NEW: prompt value is a List<Map<String,dynamic>> laid out vertically
-        if (value is! List) {
-          // Guard: wrong shape; show a friendly fallback
+      switch (type) {
+        case 'header': {
+          final text = (value ?? '').toString().trim();
+          if (text.isEmpty) break;
           widgets
-            ..add(_unsupported('prompt expects a List<Map>'))
-            ..add(const SizedBox(height: 16));
+            ..add(SectionPageHeader(text: text))
+            ..add(const SizedBox(height: 24));
           break;
         }
-        final promptChildren = _buildPromptChildren(value);
-        widgets
-          ..add(
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.fromLTRB(18, 20, 18, 20),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: ContentStyles.cardBorder),
-                boxShadow: const [ContentStyles.cardShadow],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: promptChildren,
-              ),
-            ),
-          )
-          ..add(const SizedBox(height: 24));
-        break;
-      }
 
-      default: {
-        widgets
-          ..add(_unsupported('Unsupported block: $type'))
-          ..add(const SizedBox(height: 16));
+        case 'paragraph': {
+          final text = (value ?? '').toString().trim();
+          if (text.isEmpty) break;
+          widgets
+            ..add(SectionPageParagraph(text: text))
+            ..add(const SizedBox(height: 24));
+          break;
+        }
+
+        case 'image': {
+          final url = (value ?? '').toString().trim();
+          if (url.isEmpty) break;
+          widgets
+            ..add(SectionPageNetworkImage(url: url))
+            ..add(const SizedBox(height: 24));
+          break;
+        }
+
+        case 'prompt': {
+          // PROMPT expects a List of inner maps, each with exactly one key/value.
+          if (value is! List) {
+            // Skip silently; log in debug
+            if (kDebugMode) {
+              debugPrint('[renderer] prompt expects a List<Map>, got: ${value.runtimeType}');
+            }
+            break;
+          }
+
+          final promptChildren = _buildPromptChildren(
+            value.cast<dynamic>(),
+          );
+
+          if (promptChildren.isEmpty) break;
+
+          widgets
+            ..add(
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.fromLTRB(18, 20, 18, 20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: ContentStyles.cardBorder),
+                  boxShadow: const [ContentStyles.cardShadow],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: promptChildren,
+                ),
+              ),
+            )
+            ..add(const SizedBox(height: 24));
+          break;
+        }
+
+        default:
+          // Unknown/unsupported block (e.g., "answer"): skip silently.
+          if (kDebugMode) {
+            debugPrint('[renderer] Skipping unsupported block type: $type');
+          }
+          continue;
       }
+    } catch (e, st) {
+      if (kDebugMode) {
+        debugPrint('[renderer] Error rendering block $block: $e');
+        debugPrint('$st');
+      }
+      // Add a very small, unobtrusive warning spacer (or omit entirely)
+      widgets.add(const SizedBox(height: 8));
     }
   }
 
@@ -121,100 +141,114 @@ List<Widget> _buildPromptChildren(List<dynamic> innerSpecs) {
   final children = <Widget>[];
 
   for (final raw in innerSpecs) {
-    if (raw is! Map || raw.isEmpty) continue;
-    final type = raw.keys.first;
-    final value = raw[type];
-
-    switch (type) {
-      case 'header': {
-        final text = (value ?? '').toString().trim();
-        if (text.isEmpty) break;
-        children
-          ..add(SectionPageHeader(text: text))
-          ..add(const SizedBox(height: 18));
-        break;
+    try {
+      if (raw is! Map || raw.isEmpty) {
+        debugPrint('Inner type of prompt was not a map: ${raw.runtimeType}');
+        continue;
       }
+      // For prompt inner blocks, each entry is a single-key map, e.g. { "header": "Text" }
+      final String type = raw.keys.first.toString();
+      final dynamic value = raw[type];
 
-      case 'paragraph': {
-        final text = (value ?? '').toString().trim();
-        if (text.isEmpty) break;
-        children
-          ..add(SectionPageParagraph(text: text))
-          ..add(const SizedBox(height: 18));
-        break;
-      }
+      switch (type.toLowerCase()) {
+        case 'header': {
+          final text = (value ?? '').toString().trim();
+          if (text.isEmpty) break;
+          children
+            ..add(SectionPageHeader(text: text))
+            ..add(const SizedBox(height: 18));
+          break;
+        }
 
-      case 'image': {
-        final url = (value ?? '').toString().trim();
-        if (url.isEmpty) break;
-        children
-          ..add(SectionPageNetworkImage(url: url))
-          ..add(const SizedBox(height: 18));
-        break;
-      }
+        case 'paragraph': {
+          final text = (value ?? '').toString().trim();
+          if (text.isEmpty) break;
+          children
+            ..add(SectionPageParagraph(text: text))
+            ..add(const SizedBox(height: 18));
+          break;
+        }
 
-      case 'options': {
-        // value must be List<String>
-        final List<String> options = (value as List?)
-                ?.whereType<String>()
-                .toList(growable: false) ??
-            const <String>[];
+        case 'image': {
+          final url = (value ?? '').toString().trim();
+          if (url.isEmpty) break;
+          children
+            ..add(SectionPageNetworkImage(url: url))
+            ..add(const SizedBox(height: 18));
+          break;
+        }
 
-        for (int i = 0; i < options.length; i++) {
-          final label = options[i];
-          children.add(
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () {}, // hook business logic later
-                style: ElevatedButton.styleFrom(
-                  minimumSize: const Size.fromHeight(48),
-                  shape: const StadiumBorder(),
-                  backgroundColor: Colors.white,
-                  foregroundColor: Colors.black87,
-                  elevation: 0,
-                  side: const BorderSide(color: ContentStyles.cardBorder),
-                  textStyle: ContentStyles.body,
-                ),
-                child: RichText(
-                  text: TextSpan(
-                    style: ContentStyles.body,
-                    children: [TextSpan(text: label)],
-                  ),
-                ),
+        case 'options': {
+          final List<String> options = _asStringList(value);
+          if (options.isEmpty) break;
+
+          for (int i = 0; i < options.length; i++) {
+            children.add(
+              PromptOptionButton(
+                label: options[i],
+                // alternate background: even = white, odd = light gray
+                isAlternate: i.isOdd,
               ),
-            ),
-          );
-          if (i != options.length - 1) {
-            children.add(const SizedBox(height: 16));
+            );
+            if (i != options.length - 1) {
+              children.add(const SizedBox(height: 18));
+            }
           }
-        }
-        if (options.isNotEmpty) {
-          // Space after the options group to separate from any following block
-          children.add(const SizedBox(height: 2));
-        }
-        break;
-      }
 
-      default: {
-        children
-          ..add(_unsupported('Unsupported prompt block: $type'))
-          ..add(const SizedBox(height: 12));
+          if (options.isNotEmpty) {
+            children.add(const SizedBox(height: 18));
+          }
+          break;
+        }
+
+
+        default:
+          // Unknown inner type (e.g., "answer"): skip silently
+          if (kDebugMode) {
+            debugPrint('[renderer] Skipping unsupported prompt block: $type');
+          }
+          continue;
       }
+    } catch (e, st) {
+      if (kDebugMode) {
+        debugPrint('[renderer] Error rendering prompt child $raw: $e');
+        debugPrint('$st');
+      }
+      children.add(const SizedBox(height: 6));
     }
   }
 
   return children;
 }
 
-Widget _unsupported(String message) {
-  return Container(
-    width: double.infinity,
-    padding: const EdgeInsets.all(12),
-    decoration: BoxDecoration(
-      color: ContentStyles.backgroundGray.withOpacity(0.5),
-      borderRadius: BorderRadius.circular(8),
-    ),
-    child: Text(message, style: ContentStyles.body),
-  );
+/// Normalizes "type" / "component" and lowercases it.
+/// Returns empty string if not present/parsable.
+String _readType(Map<String, dynamic> block) {
+  final dynamic raw = block['type'] ?? block['component'];
+  final type = (raw ?? '').toString().trim().toLowerCase();
+  return type;
 }
+
+/// Normalizes "content" / "value" for top-level blocks.
+dynamic _readValue(Map<String, dynamic> block) {
+  return block.containsKey('content') ? block['content'] : block['value'];
+}
+
+/// Safely converts a Firestore value to a List`<`String`>`.
+List<String> _asStringList(dynamic value) {
+  if (value == null) return const <String>[];
+
+  if (value is List) {
+    return value
+        .map((e) => e?.toString().trim())
+        .where((e) => e != null && e.isNotEmpty)
+        .cast<String>()
+        .toList();
+  }
+  if (value is String && value.trim().isNotEmpty) {
+    return [value.trim()];
+  }
+
+  return const <String>[];
+}
+

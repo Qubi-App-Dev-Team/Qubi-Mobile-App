@@ -8,18 +8,10 @@ import 'package:flutter_svg/flutter_svg.dart';
 // Widget for all chapters page which shows information about an individual chapter (see class fields for more)
 class ChapterInfo extends StatelessWidget {
   final Chapter chapter;        // contains chapter number + title
-  final double progress;        // 0.0..1.0
-  final String difficulty;      // "beginner" | "intermediate" | "advanced"
-  final int skinsUnlocked;      // 0..2
-  final bool locked;            // whether chapter is locked
 
   const ChapterInfo({
     super.key,
     required this.chapter,
-    required this.progress,
-    required this.difficulty,
-    required this.skinsUnlocked,
-    this.locked = false,
   });
 
   static const _lightBadge = Color(0xFFE6EEF8);   // skill & skins badge color
@@ -27,7 +19,7 @@ class ChapterInfo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final clampedProgress = progress.clamp(0.0, 1.0);
+    final clampedProgress = chapter.progress.clamp(0.0, 1.0);
     final percentText = '${(clampedProgress * 100).round()}% progress';
 
     return Material(
@@ -40,7 +32,7 @@ class ChapterInfo extends StatelessWidget {
           // ✅ Capture navigator before any await to avoid using context across async gaps.
           final navigator = Navigator.of(context);
 
-          if (locked) {
+          if (chapter.locked) {
             final proceed = await _confirmProceedDialog(context);
             if (proceed != true) return; // stay on page if user taps No or dismisses
           }
@@ -67,7 +59,7 @@ class ChapterInfo extends StatelessWidget {
                       color: Color(0xff1B9CFC),
                     ),
                   ),
-                  if (locked) ...[
+                  if (chapter.locked) ...[
                     const SizedBox(width: 8),
                     InfoBadge(
                       leading: const Icon(Icons.lock, size: 14, color: Colors.white),
@@ -100,8 +92,8 @@ class ChapterInfo extends StatelessWidget {
 
               const SizedBox(height: 8),
 
-              /// Progress section (only for unlocked chapters)
-              if (!locked) ...[
+              /// progress section (only for unlocked chapters)
+              if (!chapter.locked) ...[
                 Text(
                   percentText,
                   style: const TextStyle(
@@ -120,12 +112,12 @@ class ChapterInfo extends StatelessWidget {
                 children: [
                   InfoBadge(
                     leading: SvgPicture.asset(
-                      'assets/images/${difficulty.toLowerCase()}_icon.svg',
+                      'assets/images/${chapter.difficulty.toLowerCase()}_icon.svg',
                       width: 18,
                       height: 18,
                       errorBuilder: (c, e, s) => const Icon(Icons.error, size: 16),
                     ),
-                    label: _capitalize(difficulty),
+                    label: _capitalize(chapter.difficulty),
                     backgroundColor: _lightBadge,
                     labelColor: Colors.black87,
                     borderColor: Colors.transparent,
@@ -138,7 +130,7 @@ class ChapterInfo extends StatelessWidget {
                       height: 18,
                       errorBuilder: (c, e, s) => const Icon(Icons.style, size: 16),
                     ),
-                    label: 'Skins $skinsUnlocked/2',
+                    label: 'Skins ${chapter.skinsUnlocked}/2',
                     backgroundColor: _lightBadge,
                     labelColor: Colors.black87,
                     borderColor: Colors.transparent,

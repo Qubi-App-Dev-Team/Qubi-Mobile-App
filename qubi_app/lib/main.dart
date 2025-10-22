@@ -1,7 +1,15 @@
 import 'package:flutter/material.dart';
-import 'components/nav_bar.dart'; // navigation bar
+import 'components/nav_bar.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
+import 'package:qubi_app/pages/learn/bloc/chapter_data_store.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+  ChapterDataStore.refreshChaptersCache(includeDocId: false);
   runApp(const MyApp());
 }
 
