@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'components/nav_bar.dart'; // navigation bar
 import 'auth_gate.dart'; // widget tree for auth
 import 'package:firebase_core/firebase_core.dart'; // firebase core
 import 'firebase_options.dart'; // firebase options

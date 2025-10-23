@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:qubi_app/add_email_password.dart';
 import 'package:qubi_app/pages/home/home.dart';
 import 'package:firebase_auth/firebase_auth.dart' hide EmailAuthProvider;
 import 'package:firebase_ui_auth/firebase_ui_auth.dart';
@@ -73,19 +72,7 @@ class AuthGate extends StatelessWidget {
             },
           );
         }
-
-        final user = snapshot.data!;
-        final providerIds = user.providerData.map((p) => p.providerId).toList();
-
-        // If Google login only → force link email/password
-        final googleOnly = providerIds.contains('google.com') && !providerIds.contains('password');
-
-        if (googleOnly) {
-          return AddEmailPasswordScreen(user: user);
-        } else {
-          return const HomePage();
-        }
-
+        return const HomePage();
       },
     );
   }
