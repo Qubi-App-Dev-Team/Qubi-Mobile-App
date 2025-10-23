@@ -28,9 +28,9 @@ def main(circuit_id, quantum_computer_name):
     start_time = time.perf_counter()
     
     if quantum_computer_name == 'ionq_simulator':
-        res = get_ionq_results(qc, shots=1000, backend_name=quantum_computer_name, create_plot=True, save_plot=f"results/histogram_{circuit_id}.png")
+        res = get_ionq_results(qc, shots=1000, backend_name=quantum_computer_name, create_plot=True, save_plot=f"results/histogram_ionq{circuit_id}.png")
     else:
-        res = get_ibm_results(qc, shots=1000, backend_name="simulator_stabilizer", create_plot=True, save_plot=f"results/histogram_{circuit_id}.png")
+        res = get_ibm_results(qc, shots=1000, backend_name="simulator_stabilizer", create_plot=True, save_plot=f"results/histogram_ibm{circuit_id}.png")
 
     elapsed_time = time.perf_counter() - start_time
 
