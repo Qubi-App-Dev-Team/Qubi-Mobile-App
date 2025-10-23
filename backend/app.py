@@ -6,7 +6,20 @@ import os, json
 from dotenv import load_dotenv
 from fastapi import FastAPI
 
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
+import hashlib
+import json
+import requests
+
 app = FastAPI()
+
+
+class ExecuteShakeRequest(BaseModel):
+    circuit: dict
+    quantum_computer: str
+    circuit_name: str | None = None
+
 
 # Dictionary for all time options
 class Time(BaseModel):
@@ -45,7 +58,7 @@ class Run(BaseModel):
 # Schema for circuit to store in db
 class Circuit(BaseModel):
     gates: list[Gate]
-    name: str
+    # name: str
     classical: int
     qubit: int
     measure: Measurement
@@ -102,6 +115,30 @@ async def post_circuit(circuit: Circuit):
     })
     return {"message": "Posted a new circuit."}
 
+@app.post("/circuit/{hash_id}")
+async def post_circuit(hash_id: str, circuit: Circuit):
+    """
+    Inserts a circuit into Firestore using a provided hash_id as the document ID.
+    Automatically appends the measurement gate before storing.
+    """
+    # Add the measurement gate as the last gate
+    circuit.gates.append(circuit.measure)
+
+    # Create the Firestore document under the given hash_id
+    db.collection("circuits").document(hash_id).set({
+        "gates": [
+            {
+                "name": gate.name,
+                "qubits": gate.qubit,
+                **({"clbits": gate.classical} if gate.name == "measure" else {})
+            } for gate in circuit.gates
+        ],
+        "num_clbits": circuit.classical,
+        "num_qubits": circuit.qubit,
+    })
+
+    return {"message": f"Circuit {hash_id} inserted successfully."}
+
 # Read a run
 @app.get("/runs/{identifier}")
 async def get_run(identifier: str):
@@ -149,3 +186,71 @@ async def delete_run(identifier: str):
 async def delete_circuit(identifier: str):
     db.collection("circuits").document(identifier).delete()
     return {"message": f"{identifier} is gone"}
+
+
+def circuit_exists(hash_id: str) -> bool:
+    """
+    Checks if a circuit document with the given hash_id exists in Firestore.
+    """
+    doc_ref = db.collection("circuits").document(hash_id)
+    return doc_ref.get().exists
+
+
+def canonicalize_and_hash(circuit: dict) -> str:
+    """
+    Converts a canonical circuit dict into a sorted JSON string
+    then computes a deterministic SHA-256 hash.
+    """
+    canonical_json = json.dumps(circuit, sort_keys=True)
+    return hashlib.sha256(canonical_json.encode()).hexdigest()
+
+
+
+@app.post("/execute_shake")
+async def execute_shake_endpoint(request: ExecuteShakeRequest):
+    """
+    1. Hash circuit
+    2. Check if it exists in Firestore (via circuit_exists)
+    3. If not, post it to /circuit/{hash_id}
+    4. Call execution function
+    """
+
+    circuit = request.circuit
+    quantum_computer = request.quantum_computer
+    circuit_name = request.circuit_name
+
+    # 1. Hash circuit
+    hash_id = canonicalize_and_hash(circuit)
+    print(f"Computed hash: {hash_id}")
+
+    # 2. Check if circuit exists
+    try:
+        exists = circuit_exists(hash_id)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error checking Firestore: {e}")
+
+    # 3. Post circuit if it doesn't exist
+    if not exists:
+        print("Circuit not found. Posting to Firestore...")
+
+        try:
+            # Call the internal function directly
+            response = await post_circuit(hash_id, Circuit(**circuit))
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Failed to post circuit: {e}")
+
+        print("Circuit successfully posted to Firestore.")
+    else:
+        print("Circuit already exists. Skipping insert.")
+
+
+    # 4. Call joey's function to do a run 
+    # # main('5x24CbCFtflbJHA8ldaD', 'ionq_simulator') 
+    # # main(hash_id, quantum_computer)
+
+    return {
+        "message": "execute_shake completed successfully",
+        "hash_id": hash_id,
+        "execution_result": "[Placeholder run id]",
+    }
+
