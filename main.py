@@ -1,4 +1,5 @@
 import time
+import os
 
 from utils.firebase_rw import get_circuit_by_id, add_results
 from utils.create_circuit import create_circuit
@@ -22,6 +23,9 @@ def main(circuit_id, quantum_computer_name):
     # Create the quantum circuit
     qc = create_circuit(gates, num_qubits, num_clbits)
     print(f"\n[{circuit_id}] Created Circuit:\n{qc}\n")
+
+    # Create results folder if nonexistent
+    os.makedirs("results", exist_ok=True)
 
     # Run the circuit on the specified quantum computer
     print(f"Running circuit on {quantum_computer_name}...")
