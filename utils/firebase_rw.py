@@ -40,7 +40,8 @@ def add_results(doc_id, elapsed_time, results):
         'circuit_id': doc_id,
         'quantum_computer': results.backend_name,
         'histogram': results.get_counts(),
-        'total_runtime': round(elapsed_time, 2)
+        'total_runtime': round(elapsed_time, 2),
+        'run_datetime': firestore.SERVER_TIMESTAMP
     }
 
     # Set the data

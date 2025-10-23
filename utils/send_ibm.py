@@ -1,7 +1,8 @@
 import os
 from dotenv import load_dotenv
-from qiskit import QuantumCircuit
-from qiskit_ibm_runtime import QiskitRuntimeService, SamplerV2 as Sampler
+from qiskit import QuantumCircuit, transpile
+from qiskit_ibm_runtime import QiskitRuntimeService, SamplerV2 as Sampler, Session, EstimatorV2 as Estimator
+from qiskit_ibm_runtime.accounts.exceptions import AccountAlreadyExistsError
 import matplotlib.pyplot as plt
 
 load_dotenv()
@@ -18,30 +19,44 @@ def send_to_ibm(circuit: QuantumCircuit, shots: int = 1000, backend_name: str = 
     Returns:
         Job result from IBM
     """
-    api_token = os.getenv("IBM_API_TOKEN")
-    if not api_token:
-        raise ValueError("IBM_API_TOKEN environment variable not set. Please set it in your .env file.")
-    
-    # Initialize IBM Runtime Service
-    service = QiskitRuntimeService(channel="ibm_quantum", token=api_token)
-    
-    # Choose backend
-    backend = service.backend(backend_name)
-    print(f"Using IBM backend: {backend.name}")
-    
-    # Create a Sampler to run the circuit
-    sampler = Sampler(mode="async", backend=backend)
-    
-    print("Submitting job to IBM Quantum...")
-    job = sampler.run([circuit], shots=shots)
-    
-    job_id = job.job_id()
-    print(f"Job submitted! Job ID: {job_id}")
-    
-    # Wait for result
+
+        # Save your credentials (one-time setup)
+    try:
+        api_token = os.getenv("IBM_API_TOKEN")
+        if not api_token:
+            raise Exception("IBM_API_TOKEN environment variable not set. Please set it in your .env file.")
+        
+        QiskitRuntimeService.save_account(channel="ibm_quantum_platform", token=api_token)
+        print("Account saved successfully!")
+        
+    except AccountAlreadyExistsError as e:
+        print("Account already exists. Skipping save.")
+        pass
+    except Exception as e:
+        print(f"Error: {e}")
+
+    # Connect to IBM Quantum
+    service = QiskitRuntimeService(channel="ibm_quantum_platform")
+
+    # Get a backend
+    backend = service.least_busy(operational=True, simulator=False)
+    print(f"\nUsing backend: {backend.name}")
+
+    # IMPORTANT: Transpile the circuit for the target backend
+    transpiled_qc = transpile(circuit, backend=backend, optimization_level=3)
+    print(f"\nTranspiled circuit (optimized for {backend.name}):")
+
+    sampler = Sampler(backend)
+    job = sampler.run([transpiled_qc])
+    print(f"\nJob submitted! Job ID: {job.job_id()}")
+
+    # Wait for results
+    print("Waiting for results...")
     result = job.result()
-    
+    print(f"\nResults: {result}")
+
     return result
+
 
 def get_ibm_results(circuit: QuantumCircuit, shots: int = 1000, backend_name: str = "ibmq_qasm_simulator", create_plot: bool = True, save_plot: str = None):
     """
@@ -50,8 +65,25 @@ def get_ibm_results(circuit: QuantumCircuit, shots: int = 1000, backend_name: st
     try:
         result = send_to_ibm(circuit, shots, backend_name)
         
-        # Extract counts
-        counts = result[0].data.meas.get_counts()
+        # ← CHANGE THIS SECTION - Extract counts properly
+        pub_result = result[0]
+        data = pub_result.data
+        
+        # Try to get counts from the correct classical register
+        # Check your circuit's classical register name first
+        if hasattr(data, 'c'):
+            counts = data.c.get_counts()
+        elif hasattr(data, 'meas'):
+            counts = data.meas.get_counts()
+        else:
+            # Fallback: find the first valid measurement data
+            for attr_name in dir(data):
+                if not attr_name.startswith('_'):
+                    attr = getattr(data, attr_name)
+                    if hasattr(attr, 'get_counts'):
+                        counts = attr.get_counts()
+                        print(f"Using classical register: {attr_name}")
+                        break
         
         print(f"\nResults from IBM {backend_name} ({shots} shots):")
         print("=" * 50)
@@ -69,7 +101,10 @@ def get_ibm_results(circuit: QuantumCircuit, shots: int = 1000, backend_name: st
     
     except Exception as e:
         print(f"Error sending circuit to IBM Quantum: {e}")
+        import traceback
+        traceback.print_exc()  # ← ADD this for better error debugging
         return None
+
 
 def create_histogram(counts, shots, title="Quantum Measurement Results", save_path=None):
     """Same as your IonQ version — reused for IBM results."""
