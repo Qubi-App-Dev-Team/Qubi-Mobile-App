@@ -11,10 +11,17 @@ class AddEmailPasswordScreen extends StatefulWidget {
 }
 
 class _AddEmailPasswordScreenState extends State<AddEmailPasswordScreen> {
-  final emailController = TextEditingController();
+  late TextEditingController emailController;
   final passwordController = TextEditingController();
   bool isLoading = false;
   String? errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    // Pre-fill the email field with the user's email if available
+    emailController = TextEditingController(text: widget.user.email ?? '');
+  }
 
   Future<void> _linkEmailPassword() async {
     setState(() {
@@ -69,7 +76,11 @@ class _AddEmailPasswordScreenState extends State<AddEmailPasswordScreen> {
             const SizedBox(height: 20),
             TextField(
               controller: emailController,
-              decoration: const InputDecoration(labelText: 'Email'),
+              readOnly: true, // Email field is read-only
+              decoration: const InputDecoration(
+                labelText: 'Email',
+                suffixIcon: Icon(Icons.lock_outline),
+              ),
             ),
             const SizedBox(height: 10),
             TextField(

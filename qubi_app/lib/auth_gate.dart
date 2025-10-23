@@ -5,6 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart' hide EmailAuthProvider;
 import 'package:firebase_ui_auth/firebase_ui_auth.dart';
 import 'package:firebase_ui_oauth_google/firebase_ui_oauth_google.dart'; 
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter/foundation.dart';
 
 class AuthGate extends StatelessWidget {
   const AuthGate({super.key, required this.clientId});
@@ -23,25 +24,35 @@ class AuthGate extends StatelessWidget {
 
         // Not signed in → show login page
         if (!snapshot.hasData) {
-          return SignInScreen(                                         
-            providers: [EmailAuthProvider(), GoogleProvider(clientId: dotenv.env['GOOGLE_CLIENT_ID'] ?? '')],
+          return SignInScreen(
+            providers: [
+              EmailAuthProvider(), 
+              GoogleProvider(
+                clientId: switch (defaultTargetPlatform) {
+                  TargetPlatform.iOS => dotenv.env['IOS_CLIENT_ID'] ?? '',
+                  TargetPlatform.macOS => dotenv.env['IOS_CLIENT_ID'] ?? '',
+                  TargetPlatform.android => '', // ✅ empty string instead of null
+                  _ => dotenv.env['GOOGLE_CLIENT_ID'] ?? '',
+                },
+              ),
+            ],
             headerBuilder: (context, constraints, shrinkOffset) {
               return Padding(
                 padding: const EdgeInsets.all(20),
                 child: AspectRatio(
                   aspectRatio: 1,
-                  child: Image.asset('assets/images/qubi_logo.png'),
+                  child: Image.asset('assets/images/qubi_ball.png'),
                 ),
               );
             },
-            subtitleBuilder: (context, action) {                 
+            subtitleBuilder: (context, action) {
               return Padding(
                 padding: const EdgeInsets.symmetric(vertical: 8.0),
                 child: action == AuthAction.signIn
                     ? const Text('Welcome to Qubi App, please sign in!')
                     : const Text('Welcome to Qubi App, please sign up!'),
               );
-            },  
+            },
             footerBuilder: (context, action) {
               return const Padding(
                 padding: EdgeInsets.only(top: 16),
@@ -56,11 +67,11 @@ class AuthGate extends StatelessWidget {
                 padding: const EdgeInsets.all(20),
                 child: AspectRatio(
                   aspectRatio: 1,
-                  child: Image.asset('assets/images/qubi_logo.png'),
+                  child: Image.asset('assets/images/qubi_gate.png'),
                 ),
               );
-            },                           
-          );                                                           
+            },
+          );
         }
 
         final user = snapshot.data!;
@@ -68,13 +79,9 @@ class AuthGate extends StatelessWidget {
 
         // If Google login only → force link email/password
         final googleOnly = providerIds.contains('google.com') && !providerIds.contains('password');
-        final passwordOnly = providerIds.contains('password') && !providerIds.contains('google.com');
 
         if (googleOnly) {
           return AddEmailPasswordScreen(user: user);
-        } else if (passwordOnly) { 
-          print("add option for adding google log in too");
-          return const HomePage();
         } else {
           return const HomePage();
         }
