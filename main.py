@@ -3,7 +3,12 @@ import time
 from utils.firebase_rw import get_circuit_by_id, add_results
 from utils.create_circuit import create_circuit
 from utils.send_ionq import get_ionq_results
+from utils.send_ibm import get_ibm_results
 
+""" quantum_computer_name options:
+        ionq: 'ionq_simulator'
+        ibm: ''
+"""
 def main(circuit_id, quantum_computer_name):
     print(f"Fetching circuit '{circuit_id}' from Firebase...")
 
@@ -21,7 +26,12 @@ def main(circuit_id, quantum_computer_name):
     # Run the circuit on the specified quantum computer
     print(f"Running circuit on {quantum_computer_name}...")
     start_time = time.perf_counter()
-    res = get_ionq_results(qc, shots=1000, backend_name=quantum_computer_name, create_plot=True, save_plot=f"results/histogram_{circuit_id}.png")
+    
+    if quantum_computer_name == 'ionq_simulator':
+        res = get_ionq_results(qc, shots=1000, backend_name=quantum_computer_name, create_plot=True, save_plot=f"results/histogram_{circuit_id}.png")
+    else:
+        res = get_ibm_results(qc, shots=1000, backend_name="simulator_stabilizer", create_plot=True, save_plot=f"results/histogram_{circuit_id}.png")
+
     elapsed_time = time.perf_counter() - start_time
 
     if res is None:
