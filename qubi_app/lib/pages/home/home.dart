@@ -1,17 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:qubi_app/pages/home/components/qubi_card.dart';
-import 'package:qubi_app/pages/home/components/circuit_section.dart';
 import 'package:qubi_app/pages/home/components/collapsible_section.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:qubi_app/auth.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final User? user = Auth().currentUser;
     return Scaffold(
       backgroundColor: const Color(0xFFE6EEF8),
       appBar: AppBar(
