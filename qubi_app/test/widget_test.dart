@@ -8,7 +8,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart'; // dotenv for env variables
-
 import 'package:qubi_app/main.dart';
 
 void main() {
