@@ -53,11 +53,17 @@ class Circuit(BaseModel):
 # Dictionary for the type and content of a component (components will be used to build pages)
 class Component(BaseModel):
     type: str
-    content: Optional[Union[str, Dict[str, Any]]] = None
+    content: Optional[str] = None
+
+# Dictionary for the type and content of a prompt (prompts are special components that will be used to build pages)
+class Prompt(BaseModel):
+    type: str 
+    content: Optional[List[Component]] = None 
+
 
 # Schema for a page in a section to store in db (each section stores a list of pages)
 class Page(BaseModel):
-    components: List[Component]
+    components: List[Union[Component, Prompt]]
 
 # Schema for a section in a chapter to store in db (each chapter stores a list of sections)
 class Section(BaseModel):
