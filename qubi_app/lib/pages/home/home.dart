@@ -9,15 +9,6 @@ import 'package:qubi_app/auth.dart';
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
-  Future<void> signOut() async {
-    await Auth().signOut();
-  }
-
-  Widget _userUid(User? user) {
-    return Text(user?.email ?? 'User email');
-  }
-
-
   @override
   Widget build(BuildContext context) {
     final User? user = Auth().currentUser;
@@ -58,11 +49,10 @@ class HomePage extends StatelessWidget {
                 SizedBox(
                   height: 325,
                   child: ListView(
-                    children: [
-                      _userUid(user),
-                      const QubiCard(title: "Qubi v1", qubiColor: Color(0xFF66E3C4)),
-                      const QubiCard(title: "Qubi v1", qubiColor: Color(0xFF9D6CFF)),
-                      const QubiCard(title: "Qubi v1", qubiColor: Colors.blue),
+                    children: const [
+                      QubiCard(title: "Qubi v1", qubiColor: Color(0xFF66E3C4)),
+                      QubiCard(title: "Qubi v1", qubiColor: Color(0xFF9D6CFF)),
+                      QubiCard(title: "Qubi v1", qubiColor: Colors.blue),
                     ],
                   ),
                 ),

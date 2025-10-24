@@ -5,6 +5,8 @@ import 'package:qubi_app/components/app_backdrop.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'exec_history.dart';
 import 'default_settings.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:qubi_app/auth.dart';
 
 Future<void> openExternal(String url) async {
   final uri = Uri.parse(url);
@@ -108,9 +110,10 @@ class ProfilePage extends StatelessWidget {
 
 class ProfileCard extends StatelessWidget {
   const ProfileCard({super.key});
-
+  
   @override
   Widget build(BuildContext context) {
+    final User? user = Auth().currentUser;
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
       decoration: cardDecoration(),
@@ -128,7 +131,7 @@ class ProfileCard extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            'Bucky@qolour.io',
+            user?.email ?? '<user email',
             style: TextStyle(
               fontSize: 15,
               color: Colors.black.withValues(alpha: 0.55),
@@ -300,6 +303,15 @@ class SettingsSection extends StatelessWidget {
             title: 'Learn more quantum',
             subtitle: 'Resources, events, and communities at qolour.io',
             onTap: () => openExternal('https://www.qolour.io/'),
+          ),
+          Divider(height: 1, color: Color(0xFFECECEC)),
+
+          // 3) Log Out
+          SettingTile(
+            svgAsset: 'assets/images/sign_out.svg', // ← matches your repo
+            title: 'Sign Out',
+            subtitle: 'Log out from your user session.',
+            onTap: () async { await Auth().signOut(); },
           ),
         ],
       ),
