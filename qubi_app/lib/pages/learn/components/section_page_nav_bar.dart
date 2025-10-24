@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 class SectionPageNavBar extends StatelessWidget {
   final int currentPage;     // 1-based
   final int totalPages;
-  final VoidCallback? onPrev; // optional; keep null for now
-  final VoidCallback? onNext; // optional; keep null for now
+  final VoidCallback? onPrev;
+  final VoidCallback? onNext;
   final Color backgroundColor;
 
   const SectionPageNavBar({
@@ -13,7 +13,7 @@ class SectionPageNavBar extends StatelessWidget {
     required this.totalPages,
     this.onPrev,
     this.onNext,
-    this.backgroundColor = const Color(0xFFE6EEF8), // matches your app background
+    this.backgroundColor = const Color(0xFFE6EEF8), // UI stays transparent by default
   });
 
   @override
@@ -21,12 +21,12 @@ class SectionPageNavBar extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12),
       height: 72,
-      color: Colors.transparent, // fully see-through
+      color: Colors.transparent,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           InkWell(
-            onTap: onPrev ?? () {},
+            onTap: onPrev, // parent ensures bounds (no-op if at first page)
             borderRadius: BorderRadius.circular(8),
             child: const Padding(
               padding: EdgeInsets.all(8.0),
@@ -50,7 +50,7 @@ class SectionPageNavBar extends StatelessWidget {
           ),
           const SizedBox(width: 12),
           InkWell(
-            onTap: onNext ?? () {},
+            onTap: onNext, // parent ensures bounds (no-op if at last page)
             borderRadius: BorderRadius.circular(8),
             child: const Padding(
               padding: EdgeInsets.all(8.0),

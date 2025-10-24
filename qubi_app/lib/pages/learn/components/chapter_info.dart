@@ -5,7 +5,7 @@ import 'package:qubi_app/pages/learn/models/chapter.dart';
 import 'package:qubi_app/pages/learn/pages/chapter_content_page.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-//Widget for all chapters page which shows information about an individual chapter (see class fields for more)
+// Widget for all chapters page which shows information about an individual chapter (see class fields for more)
 class ChapterInfo extends StatelessWidget {
   final Chapter chapter;        // contains chapter number + title
   final double progress;        // 0.0..1.0
@@ -22,7 +22,7 @@ class ChapterInfo extends StatelessWidget {
     this.locked = false,
   });
 
-  static const _lightBadge = Color(0xFFE6EEF8); // skill & skins badge color
+  static const _lightBadge = Color(0xFFE6EEF8);   // skill & skins badge color
   static const _lockedOrange = Color(0xFFF46A1E); // locked badge color
 
   @override
@@ -36,18 +36,16 @@ class ChapterInfo extends StatelessWidget {
       elevation: 1,
       clipBehavior: Clip.antiAlias, // ensures ripple stays within rounded corners
       child: InkWell(
-        onTap: () {
+        onTap: () async {
+          // ✅ Capture navigator before any await to avoid using context across async gaps.
+          final navigator = Navigator.of(context);
+
           if (locked) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text("You haven't unlocked this chapter yet!"),
-                behavior: SnackBarBehavior.floating,
-                duration: Duration(seconds: 2),
-              ),
-            );
-            return;
+            final proceed = await _confirmProceedDialog(context);
+            if (proceed != true) return; // stay on page if user taps No or dismisses
           }
-          Navigator.of(context).push(
+
+          navigator.push(
             MaterialPageRoute(
               builder: (_) => ChapterContentPage(chapter: chapter),
             ),
@@ -66,7 +64,7 @@ class ChapterInfo extends StatelessWidget {
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
-                      color: Color(0xff1B9CFC)
+                      color: Color(0xff1B9CFC),
                     ),
                   ),
                   if (locked) ...[
@@ -125,8 +123,7 @@ class ChapterInfo extends StatelessWidget {
                       'assets/images/${difficulty.toLowerCase()}_icon.svg',
                       width: 18,
                       height: 18,
-                      errorBuilder: (c, e, s) =>
-                          const Icon(Icons.error, size: 16),
+                      errorBuilder: (c, e, s) => const Icon(Icons.error, size: 16),
                     ),
                     label: _capitalize(difficulty),
                     backgroundColor: _lightBadge,
@@ -139,8 +136,7 @@ class ChapterInfo extends StatelessWidget {
                       'assets/images/skins_icon.svg',
                       width: 18,
                       height: 18,
-                      errorBuilder: (c, e, s) =>
-                          const Icon(Icons.style, size: 16),
+                      errorBuilder: (c, e, s) => const Icon(Icons.style, size: 16),
                     ),
                     label: 'Skins $skinsUnlocked/2',
                     backgroundColor: _lightBadge,
@@ -153,6 +149,33 @@ class ChapterInfo extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  /// Shows a confirmation dialog when a locked chapter is tapped.
+  /// Returns true if the user chooses "Yes", false otherwise.
+  Future<bool?> _confirmProceedDialog(BuildContext context) {
+    return showDialog<bool>(
+      context: context,
+      barrierDismissible: false, // force an explicit choice
+      builder: (ctx) => AlertDialog(
+        title: const Text('Proceed to locked chapter?'),
+        content: const Text(
+          "You haven't met the prerequisites for this chapter yet. "
+          'Are you sure you would like to proceed?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false), // No
+            child: const Text('No'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(ctx).pop(true), // Yes
+            child: const Text('Yes'),
+          ),
+        ],
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
     );
   }

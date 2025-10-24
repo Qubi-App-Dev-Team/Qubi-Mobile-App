@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'auth_gate.dart'; // widget tree for auth
 import 'package:firebase_core/firebase_core.dart'; // firebase core
 import 'firebase_options.dart'; // firebase options
 import 'package:flutter_dotenv/flutter_dotenv.dart'; // dotenv for env variables
 import 'package:flutter/foundation.dart';
+import 'package:qubi_app/auth_gate.dart'; // auth gate
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
