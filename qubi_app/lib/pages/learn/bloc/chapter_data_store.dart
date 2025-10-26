@@ -46,6 +46,7 @@ class ChapterDataStore {
       }
 
       chapters = next; // update in-memory cache
+      chapters.sort((a, b) => a['number'].compareTo(b['number']));
       await _writeSnapshotToDisk(); // persist for offline use
 
       if (kDebugMode) {
@@ -124,6 +125,7 @@ class ChapterDataStore {
       );
       i++;
     }
+    finalSections.sort((a, b) => a.number.compareTo(b.number));
     return finalSections;
   }
 
