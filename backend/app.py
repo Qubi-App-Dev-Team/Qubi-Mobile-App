@@ -283,6 +283,7 @@ async def execute_shake_endpoint(request: ExecuteShakeRequest):
 
 '''
 {
+  "user_id": "dummy_id",
   "circuit": {
     "gates": [
       {"name": "h", "qubit": [0]},
