@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:qubi_app/assets/app_colors.dart';
-import 'package:qubi_app/pages/profile/pages/exec_detail_page.dart';
+import 'package:qubi_app/pages/home/run.dart';
 
 class ExecHistoryPage extends StatefulWidget {
   const ExecHistoryPage({super.key});
@@ -14,41 +14,79 @@ class _ExecHistoryPageState extends State<ExecHistoryPage> {
   List<String> selectedHardware = [];
   DateTime? selectedDate;
 
+  // ----------------------------------------------
+  // In _ExecHistoryPageState
+  // ----------------------------------------------
   final allExecutions = [
     {
       "name": "IBM Hanoi",
       "status": "sent",
-      "time": "16 Sept 2025 3:02 PM",
+      "time": "27 Oct 2025 2:41 AM",
       "hardware": "IBM",
+      "totalTime": "9.43s",
+      "pendingTime": "8s",
+      "executionTime": "1s",
+      "perShot": "0.001s",
+      "circuitDepth": "5",
+      "resultCount": "1000",
+      "results": [
+        {"00": 563},
+        {"01": 242},
+        {"10": 193},
+        {"11": 437},
+      ],
     },
     {
-      "name": "IonQ",
+      "name": "IonQ Harmony",
       "status": "crafted",
-      "time": "16 Sept 2025 3:02 PM",
+      "time": "26 Oct 2025 5:10 PM",
       "hardware": "IonQ",
+      "totalTime": "2.12s",
+      "pendingTime": "1.2s",
+      "executionTime": "0.9s",
+      "perShot": "0.002s",
+      "circuitDepth": "3",
+      "resultCount": "200",
+      // only two outcomes (1 qubit)
+      "results": [
+        {"0": 112},
+        {"1": 88},
+      ],
     },
     {
-      "name": "Simulated",
-      "status": "crafted",
-      "time": "16 Sept 2025 3:02 PM",
-      "hardware": "Simulated",
-    },
-    {
-      "name": "IBH",
+      "name": "IBH Hanoi",
       "status": "sent",
-      "time": "15 Sept 2025 3:02 PM",
-      "hardware": "IBM",
+      "time": "25 Oct 2025 9:01 PM",
+      "hardware": "IBH",
+      "totalTime": "15.3s",
+      "pendingTime": "13s",
+      "executionTime": "2.3s",
+      "perShot": "0.004s",
+      "circuitDepth": "6",
+      "resultCount": "1000",
+      // 3-qubit, 8 outcomes
+      "results": [
+        {"000": 122},
+        {"001": 136},
+        {"010": 104},
+        {"011": 110},
+        {"100": 129},
+        {"101": 128},
+        {"110": 134},
+        {"111": 117},
+      ],
     },
   ];
 
-  List<Map<String, String>> get filteredExecutions {
+  List<Map<String, Object>> get filteredExecutions {
     return allExecutions.where((item) {
       if (filterSentOut && item["status"] != "sent") return false;
       if (selectedHardware.isNotEmpty &&
-          !selectedHardware.contains(item["hardware"]))
+          !selectedHardware.contains(item["hardware"])) {
         return false;
+      }
       if (selectedDate != null &&
-          !item["time"]!.contains(
+          !(item["time"]! as String).contains(
             "${selectedDate!.day} ${_monthName(selectedDate!.month)}",
           )) {
         return false;
@@ -164,20 +202,44 @@ class _ExecHistoryPageState extends State<ExecHistoryPage> {
     );
   }
 
-  Widget _executionCard(BuildContext context, Map<String, String> item) {
+  Widget _executionCard(BuildContext context, Map<String, Object> item) {
     final bool sent = item["status"] == "sent";
     final Color badgeColor = sent ? AppColors.ionGreen : AppColors.emberOrange;
-    final String badgeText = sent ? "Sent" : "crafted";
+    final String badgeText = sent ? "Sent" : "Crafted";
 
     return GestureDetector(
       onTap: () {
+        // Build results map from array of maps
+        final List<dynamic>? histoArray = item["results"] as List<dynamic>;
+        final Map<String, int> resultsMap = {};
+
+        if (histoArray != null) {
+          for (final entry in histoArray) {
+            if (entry is Map<String, dynamic>) {
+              entry.forEach((key, value) {
+                resultsMap[key] = value is int
+                    ? value
+                    : int.tryParse(value.toString()) ?? 0;
+              });
+            }
+          }
+        }
+
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => ExecDetailPage(
-              name: item["name"]!,
-              status: item["status"]!,
-              time: item["time"]!,
+            builder: (_) => RunPage(
+              name: item["name"]! as String,
+              status: item["status"]! as String,
+              time: item["time"]! as String,
+              hardware: item["hardware"]! as String,
+              totalTime: item["totalTime"] as String,
+              pendingTime: item["pendingTime"] as String,
+              executionTime: item["executionTime"] as String,
+              perShot: item["perShot"] as String,
+              circuitDepth: item["circuitDepth"] as String,
+              resultCount: item["resultCount"] as String,
+              results: resultsMap,
             ),
           ),
         );
@@ -217,7 +279,7 @@ class _ExecHistoryPageState extends State<ExecHistoryPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    item["name"]!,
+                    item["name"]! as String,
                     style: const TextStyle(
                       fontWeight: FontWeight.w600,
                       fontSize: 16,
@@ -225,7 +287,7 @@ class _ExecHistoryPageState extends State<ExecHistoryPage> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    item["time"]!,
+                    item["time"]! as String,
                     style: const TextStyle(fontSize: 12, color: Colors.black54),
                   ),
                 ],
@@ -253,25 +315,6 @@ class _ExecHistoryPageState extends State<ExecHistoryPage> {
   }
 }
 
-class _FilterSheet extends StatefulWidget {
-  final bool filterSentOut;
-  final List<String> selectedHardware;
-  final DateTime? selectedDate;
-  final Function(bool, List<String>, DateTime?) onApply;
-  final VoidCallback onClearAll;
-
-  const _FilterSheet({
-    required this.filterSentOut,
-    required this.selectedHardware,
-    required this.selectedDate,
-    required this.onApply,
-    required this.onClearAll,
-  });
-
-  @override
-  State<_FilterSheet> createState() => _FilterSheetState();
-}
-
 class _FilterPanel extends StatefulWidget {
   final bool filterSentOut;
   final List<String> selectedHardware;
@@ -287,199 +330,6 @@ class _FilterPanel extends StatefulWidget {
 
   @override
   State<_FilterPanel> createState() => _FilterPanelState();
-}
-
-class _FilterSheetState extends State<_FilterSheet> {
-  late bool sentOut;
-  late List<String> hardware;
-  DateTime? date;
-
-  @override
-  void initState() {
-    super.initState();
-    sentOut = widget.filterSentOut;
-    hardware = List.from(widget.selectedHardware);
-    date = widget.selectedDate;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return FractionallySizedBox(
-      widthFactor: 0.85,
-      child: Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.only(topLeft: Radius.circular(20)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Header
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [AppColors.electricIndigo, AppColors.emberOrange],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.only(topLeft: Radius.circular(20)),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    "Filters",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 18,
-                    ),
-                  ),
-                  IconButton(
-                    onPressed: () => Navigator.pop(context),
-                    icon: const Icon(Icons.close, color: Colors.white),
-                  ),
-                ],
-              ),
-            ),
-
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _sectionHeader(
-                      "Sent out",
-                      onClear: () => setState(() => sentOut = false),
-                    ),
-                    CheckboxListTile(
-                      value: sentOut,
-                      onChanged: (v) => setState(() => sentOut = v ?? false),
-                      title: const Text("Sent to real quantum computers only"),
-                      controlAffinity: ListTileControlAffinity.leading,
-                    ),
-                    const Divider(),
-
-                    _sectionHeader(
-                      "Select hardware",
-                      onClear: () => setState(() => hardware.clear()),
-                    ),
-                    ...["IBM", "IonQ", "Simulated"].map((name) {
-                      return CheckboxListTile(
-                        value: hardware.contains(name),
-                        onChanged: (v) {
-                          setState(() {
-                            v! ? hardware.add(name) : hardware.remove(name);
-                          });
-                        },
-                        title: Text(name),
-                        controlAffinity: ListTileControlAffinity.leading,
-                      );
-                    }),
-                    const Divider(),
-
-                    _sectionHeader(
-                      "Date",
-                      onClear: () => setState(() => date = null),
-                    ),
-                    GestureDetector(
-                      onTap: () async {
-                        final picked = await showDatePicker(
-                          context: context,
-                          initialDate: date ?? DateTime.now(),
-                          firstDate: DateTime(2020),
-                          lastDate: DateTime(2030),
-                        );
-                        if (picked != null) setState(() => date = picked);
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 14,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.saltWhite,
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: Colors.black12),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              date == null
-                                  ? "Select date..."
-                                  : "${date!.day} ${_monthName(date!.month)} ${date!.year}",
-                            ),
-                            const Icon(
-                              Icons.calendar_today_outlined,
-                              size: 18,
-                              color: Colors.black54,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.skyBlue,
-                  minimumSize: const Size(double.infinity, 48),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                onPressed: () => widget.onApply(sentOut, hardware, date),
-                child: const Text(
-                  "Apply Filters",
-                  style: TextStyle(color: Colors.white, fontSize: 16),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  String _monthName(int m) => [
-    "Jan",
-    "Feb",
-    "Mar",
-    "Apr",
-    "May",
-    "Jun",
-    "Jul",
-    "Aug",
-    "Sept",
-    "Oct",
-    "Nov",
-    "Dec",
-  ][m - 1];
-
-  Widget _sectionHeader(String title, {required VoidCallback onClear}) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          title,
-          style: const TextStyle(
-            fontWeight: FontWeight.w700,
-            fontSize: 16,
-            color: AppColors.richBlack,
-          ),
-        ),
-        TextButton(onPressed: onClear, child: const Text("Clear")),
-      ],
-    );
-  }
 }
 
 class _FilterPanelState extends State<_FilterPanel> {
@@ -501,7 +351,6 @@ class _FilterPanelState extends State<_FilterPanel> {
       child: Align(
         alignment: Alignment.centerRight,
         child: Material(
-          // 👈 Added wrapper
           color: Colors.white,
           borderRadius: const BorderRadius.only(
             topLeft: Radius.circular(20),
@@ -655,7 +504,6 @@ class _FilterPanelState extends State<_FilterPanel> {
                   ],
                 ),
 
-                // Floating Apply button (icon)
                 Positioned(
                   bottom: 20,
                   right: 20,
