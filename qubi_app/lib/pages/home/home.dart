@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:qubi_app/pages/home/components/qubi_card.dart';
-import 'package:qubi_app/pages/home/components/circuit_section.dart';
+// import 'package:qubi_app/pages/home/components/circuit_section.dart';
 import 'package:qubi_app/pages/home/components/collapsible_section.dart';
 
 class HomePage extends StatelessWidget {
@@ -92,8 +92,9 @@ class HomePage extends StatelessWidget {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(30),
         border: outlined ? Border.all(color: Colors.white, width: 1.5) : null,
-        color:
-            outlined ? Colors.transparent : Colors.white.withValues(alpha: 0.2),
+        color: outlined
+            ? Colors.transparent
+            : Colors.white.withValues(alpha: 0.2),
       ),
       child: Row(
         children: [
@@ -112,7 +113,6 @@ class HomePage extends StatelessWidget {
     );
   }
 }
-
 
 class GradientIcon extends StatelessWidget {
   final IconData icon;

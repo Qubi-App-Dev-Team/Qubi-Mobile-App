@@ -1,14 +1,44 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:qubi_app/pages/home/run.dart';
-import 'package:qubi_app/pages/story/story_page.dart';
 import 'package:qubi_app/pages/home/executor.dart';
+import 'package:qubi_app/pages/story/story_page.dart';
+import 'package:qubi_app/pages/home/run.dart';
 
 class CircuitSection extends StatelessWidget {
   const CircuitSection({super.key});
 
   @override
   Widget build(BuildContext context) {
+    // You can later replace these with live circuit/execution data if needed.
+    final List<Map<String, dynamic>> executionData = [
+      {
+        "name": "IBM Hanoi",
+        "status": "sent",
+        "time": "27 Oct 2025 2:41 AM",
+        "hardware": "IBM",
+        "totalTime": "9.43s",
+        "pendingTime": "8s",
+        "executionTime": "1s",
+        "perShot": "0.001s",
+        "circuitDepth": "5",
+        "resultCount": "1000",
+        "results": {"00": 563, "01": 242, "10": 193, "11": 437},
+      },
+      {
+        "name": "IonQ Harmony",
+        "status": "crafted",
+        "time": "26 Oct 2025 5:10 PM",
+        "hardware": "IonQ",
+        "totalTime": "2.12s",
+        "pendingTime": "1.2s",
+        "executionTime": "0.9s",
+        "perShot": "0.002s",
+        "circuitDepth": "3",
+        "resultCount": "200",
+        "results": {"0": 112, "1": 88},
+      },
+    ];
+
     return Column(
       children: [
         // 🔹 Top gradient container
@@ -45,18 +75,33 @@ class CircuitSection extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.start,
                 children: [
-                  // "Read Report" → RunPage()
+                  // "Read Report" → RunPage (with full data)
                   GestureDetector(
                     onTap: () {
+                      final item = executionData[0];
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const RunPage(),
+                          builder: (_) => RunPage(
+                            name: item["name"],
+                            status: item["status"],
+                            time: item["time"],
+                            hardware: item["hardware"],
+                            totalTime: item["totalTime"],
+                            pendingTime: item["pendingTime"],
+                            executionTime: item["executionTime"],
+                            perShot: item["perShot"],
+                            circuitDepth: item["circuitDepth"],
+                            resultCount: item["resultCount"],
+                            results: Map<String, int>.from(item["results"]),
+                          ),
                         ),
                       );
                     },
+
                     child: buildGradientButton("Read Report", true),
                   ),
+
                   const SizedBox(width: 12),
 
                   // "Skip to Story" (→ StoryPage)
@@ -64,9 +109,7 @@ class CircuitSection extends StatelessWidget {
                     onTap: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(
-                          builder: (context) => const StoryPage(),
-                        ),
+                        MaterialPageRoute(builder: (_) => const StoryPage()),
                       );
                     },
                     child: buildGradientButton("Skip to Story", false),
@@ -151,9 +194,7 @@ class CircuitSection extends StatelessWidget {
                 onTap: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(
-                      builder: (context) => const ExecutorPage(),
-                    ),
+                    MaterialPageRoute(builder: (_) => const ExecutorPage()),
                   );
                 },
                 child: Container(
@@ -195,22 +236,37 @@ class CircuitSection extends StatelessWidget {
 
               const SizedBox(height: 10),
 
-              // 🔸 Run Pending Circuit Button
+              // 🔸 Run Pending Circuit Button → new RunPage (same data)
               GestureDetector(
                 onTap: () {
+                  final item = executionData[1];
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => const RunPage()),
+                    MaterialPageRoute(
+                      builder: (_) => RunPage(
+                        name: item["name"],
+                        status: item["status"],
+                        time: item["time"],
+                        hardware: item["hardware"],
+                        totalTime: item["totalTime"],
+                        pendingTime: item["pendingTime"],
+                        executionTime: item["executionTime"],
+                        perShot: item["perShot"],
+                        circuitDepth: item["circuitDepth"],
+                        resultCount: item["resultCount"],
+                        results: Map<String, int>.from(item["results"]),
+                      ),
+                    ),
                   );
-                  debugPrint('Run pending circuit pressed');
                 },
+
                 child: Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 10,
                     vertical: 8,
                   ),
                   decoration: BoxDecoration(
-                    gradient: LinearGradient(
+                    gradient: const LinearGradient(
                       begin: Alignment.bottomLeft,
                       end: Alignment.topRight,
                       colors: [Color(0xFFFF3B30), Color(0xFFFFC107)],
