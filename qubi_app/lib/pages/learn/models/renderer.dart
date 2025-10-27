@@ -55,7 +55,7 @@ Future<List<Widget>> renderSectionPageFromCache({
           if (text.isEmpty) break;
           widgets
             ..add(SectionPageHeader(text: text))
-            ..add(const SizedBox(height: 24));
+            ..add(const SizedBox(height: 8));
           break;
         }
 
@@ -64,7 +64,7 @@ Future<List<Widget>> renderSectionPageFromCache({
           if (text.isEmpty) break;
           widgets
             ..add(SectionPageParagraph(text: text))
-            ..add(const SizedBox(height: 24));
+            ..add(const SizedBox(height: 8));
           break;
         }
 
@@ -73,7 +73,17 @@ Future<List<Widget>> renderSectionPageFromCache({
           if (url.isEmpty) break;
           widgets
             ..add(SectionPageNetworkImage(url: url))
-            ..add(const SizedBox(height: 24));
+            ..add(const SizedBox(height: 8));
+          break;
+        }
+
+        case 'list': {
+          // top-level bulleted list
+          final items = _asStringList(value);
+          if (items.isEmpty) break;
+          widgets
+            ..add(_buildBulletedList(items))
+            ..add(const SizedBox(height: 8));
           break;
         }
 
@@ -97,7 +107,7 @@ Future<List<Widget>> renderSectionPageFromCache({
             ..add(
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.fromLTRB(18, 20, 18, 20),
+                padding: const EdgeInsets.fromLTRB(8, 20, 8, 20),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(16),
@@ -110,7 +120,7 @@ Future<List<Widget>> renderSectionPageFromCache({
                 ),
               ),
             )
-            ..add(const SizedBox(height: 24));
+            ..add(const SizedBox(height: 8));
           break;
         }
 
@@ -131,7 +141,7 @@ Future<List<Widget>> renderSectionPageFromCache({
     }
   }
 
-  widgets.add(const SizedBox(height: 40));
+  widgets.add(const SizedBox(height: 15));
   return widgets;
 }
 
@@ -156,7 +166,7 @@ List<Widget> _buildPromptChildren(List<dynamic> innerSpecs) {
           if (text.isEmpty) break;
           children
             ..add(SectionPageHeader(text: text))
-            ..add(const SizedBox(height: 18));
+            ..add(const SizedBox(height: 10));
           break;
         }
 
@@ -165,7 +175,7 @@ List<Widget> _buildPromptChildren(List<dynamic> innerSpecs) {
           if (text.isEmpty) break;
           children
             ..add(SectionPageParagraph(text: text))
-            ..add(const SizedBox(height: 18));
+            ..add(const SizedBox(height: 10));
           break;
         }
 
@@ -174,7 +184,17 @@ List<Widget> _buildPromptChildren(List<dynamic> innerSpecs) {
           if (url.isEmpty) break;
           children
             ..add(SectionPageNetworkImage(url: url))
-            ..add(const SizedBox(height: 18));
+            ..add(const SizedBox(height: 10));
+          break;
+        }
+
+        case 'list': {
+          // prompt inner bulleted list
+          final items = _asStringList(value);
+          if (items.isEmpty) break;
+          children
+            ..add(_buildBulletedList(items))
+            ..add(const SizedBox(height: 10));
           break;
         }
 
@@ -191,12 +211,12 @@ List<Widget> _buildPromptChildren(List<dynamic> innerSpecs) {
               ),
             );
             if (i != options.length - 1) {
-              children.add(const SizedBox(height: 18));
+              children.add(const SizedBox(height: 15));
             }
           }
 
           if (options.isNotEmpty) {
-            children.add(const SizedBox(height: 18));
+            children.add(const SizedBox(height: 15));
           }
           break;
         }
@@ -251,4 +271,57 @@ List<String> _asStringList(dynamic value) {
 
   return const <String>[];
 }
+
+/// Renders a vertical bulleted list with small circular bullets
+/// using ContentStyles.body for text.
+Widget _buildBulletedList(List<String> items) {
+  const bulletSize  = 6.0;   // small filled circle
+  const bulletGap   = 10.0;  // space between bullet and text
+  const rowGap      = 10.0;  // vertical space between items
+  const bulletColor = Colors.black87;
+
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      for (int i = 0; i < items.length; i++) ...[
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Bullet dot (nudged to align with first text line)
+            Container(
+              width: bulletSize,
+              height: bulletSize,
+              margin: const EdgeInsets.only(top: 8),
+              decoration: const BoxDecoration(
+                color: bulletColor,
+                shape: BoxShape.circle,
+              ),
+            ),
+            const SizedBox(width: bulletGap),
+
+            // Use the SAME render path as paragraphs: RichText + TextSpan(ContentStyles.body)
+            Expanded(
+              child: RichText(
+                text: TextSpan(
+                  style: ContentStyles.body, // exact same style as SectionPageParagraph
+                  children: [TextSpan(text: items[i])],
+                ),
+                // (Optional) match any paragraph textHeightBehavior if you use one:
+                // textHeightBehavior: const TextHeightBehavior(
+                //   applyHeightToFirstAscent: false,
+                //   applyHeightToLastDescent: false,
+                // ),
+                // Soft-wrap by default; no explicit maxLines
+              ),
+            ),
+          ],
+        ),
+        if (i != items.length - 1) const SizedBox(height: rowGap),
+      ],
+    ],
+  );
+}
+
+
+
 
