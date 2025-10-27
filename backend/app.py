@@ -6,6 +6,7 @@ import os, json
 from dotenv import load_dotenv
 from fastapi import FastAPI
 
+from quantum import send_circuit
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import hashlib
@@ -245,12 +246,14 @@ async def execute_shake_endpoint(request: ExecuteShakeRequest):
 
 
     # 4. Call joey's function to do a run 
+    run_id = send_circuit(hash_id, quantum_computer)
     # # main('5x24CbCFtflbJHA8ldaD', 'ionq_simulator') 
     # # main(hash_id, quantum_computer)
 
     return {
         "message": "execute_shake completed successfully",
-        "hash_id": hash_id,
+        "circuit_id": hash_id,
+        "run_id": run_id,
         "execution_result": "[Placeholder run id]",
     }
 
