@@ -17,10 +17,10 @@ app = FastAPI()
 
 
 class ExecuteShakeRequest(BaseModel):
+    user_id: str
     circuit: dict
     quantum_computer: str
     circuit_name: str | None = None
-
 
 # Dictionary for all time options
 class Time(BaseModel):
@@ -71,7 +71,12 @@ firebase_creds_dict = json.loads(firebase_creds)
 cred = credentials.Certificate(firebase_creds_dict)
 
 # init and create app
-application = firebase_admin.initialize_app(cred)
+if not firebase_admin._apps:
+    application = firebase_admin.initialize_app(cred)
+else:
+    application = firebase_admin.get_app()
+
+#application = firebase_admin.initialize_app(cred)
 db = firestore.client()
 
 # Posting a run
@@ -246,14 +251,52 @@ async def execute_shake_endpoint(request: ExecuteShakeRequest):
 
 
     # 4. Call joey's function to do a run 
-    run_id = send_circuit(hash_id, quantum_computer)
-    # # main('5x24CbCFtflbJHA8ldaD', 'ionq_simulator') 
-    # # main(hash_id, quantum_computer)
+    run_id, elapsed_time, res = send_circuit(hash_id, quantum_computer)
 
+    # Convert IonQResult to plain dictionary
+    res_dict = res.to_dict()
+
+    data = res_dict["results"][0]["data"]
+
+    # Extract counts
+    counts = data["counts"]
+    histogram_counts = [{k: v} for k, v in counts.items()]
+
+    # Extract probabilities
+    probabilities = data["probabilities"]
+    histogram_probabilities = [{k: v} for k, v in probabilities.items()]
+
+    # Build response
     return {
-        "message": "execute_shake completed successfully",
+        "success": res_dict["success"],
         "circuit_id": hash_id,
         "run_id": run_id,
-        "execution_result": "[Placeholder run id]",
-    }
+        "quantum_computer": res_dict["backend_name"],
+        "histogram_counts": histogram_counts,
+        "histogram_probabilities": histogram_probabilities,
+        "time": elapsed_time,
+        "shots": res_dict["results"][0]["shots"]
+}
 
+
+
+
+'''
+{
+  "circuit": {
+    "gates": [
+      {"name": "h", "qubit": [0]},
+      {"name": "cx", "qubit": [0, 1]}
+    ],
+    "classical": 2,
+    "qubit": 2,
+    "measure": {
+      "name": "measure",
+      "qubit": [0, 1],
+      "classical": [0, 1]
+    }
+  },
+  "quantum_computer": "ionq_simulator",
+  "circuit_name": "Bell Shake 1"
+}
+'''

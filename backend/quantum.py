@@ -46,6 +46,6 @@ def send_circuit(circuit_id, quantum_computer_name):
     run_id = add_results(circuit_id, elapsed_time, res)
     print(f"\nCompleted successfully in {elapsed_time:.2f} seconds")
 
-    return run_id
+    return run_id, elapsed_time, res
 
 #main('5x24CbCFtflbJHA8ldaD', 'ionq_simulator')
