@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:qubi_app/assets/app_colors.dart';
 import 'package:qubi_app/pages/home/run.dart';
+import 'package:qubi_app/pages/profile/models/execution.dart'; // new model import
 
 class ExecHistoryPage extends StatefulWidget {
   const ExecHistoryPage({super.key});
@@ -15,100 +16,50 @@ class _ExecHistoryPageState extends State<ExecHistoryPage> {
   DateTime? selectedDate;
 
   // ----------------------------------------------
-  // In _ExecHistoryPageState
+  // Replace maps with strongly typed Executions
   // ----------------------------------------------
-  final allExecutions = [
-    {
-      "name": "IBM Hanoi",
-      "status": "sent",
-      "time": "27 Oct 2025 2:41 AM",
-      "hardware": "IBM",
-      "totalTime": "9.43s",
-      "pendingTime": "8s",
-      "executionTime": "1s",
-      "perShot": "0.001s",
-      "circuitDepth": "5",
-      "resultCount": "1000",
-      "results": [
-        {"00": 563},
-        {"01": 242},
-        {"10": 193},
-        {"11": 437},
-      ],
-    },
-    {
-      "name": "IonQ Harmony",
-      "status": "crafted",
-      "time": "26 Oct 2025 5:10 PM",
-      "hardware": "IonQ",
-      "totalTime": "2.12s",
-      "pendingTime": "1.2s",
-      "executionTime": "0.9s",
-      "perShot": "0.002s",
-      "circuitDepth": "3",
-      "resultCount": "200",
-      // only two outcomes (1 qubit)
-      "results": [
-        {"0": 112},
-        {"1": 88},
-      ],
-    },
-    {
-      "name": "IBH Hanoi",
-      "status": "sent",
-      "time": "25 Oct 2025 9:01 PM",
-      "hardware": "IBH",
-      "totalTime": "15.3s",
-      "pendingTime": "13s",
-      "executionTime": "2.3s",
-      "perShot": "0.004s",
-      "circuitDepth": "6",
-      "resultCount": "1000",
-      // 3-qubit, 8 outcomes
-      "results": [
-        {"000": 122},
-        {"001": 136},
-        {"010": 104},
-        {"011": 110},
-        {"100": 129},
-        {"101": 128},
-        {"110": 134},
-        {"111": 117},
-      ],
-    },
+  final List<Execution> allExecutions = [
+    Execution(
+      message: true,
+      circuitId:
+          "abe6d955a212c337fa16498d5a378782330be5dc65e1bbc404a41f87383f3119",
+      runId: "Qv6DySvo3mjfiQLHkf8B",
+      quantumComputer: "IonQ",
+      histogramCounts: {"00": 490, "11": 510},
+      histogramProbabilities: {"00": 0.5, "11": 0.5},
+      time: 6.535945208001067,
+      shots: 1000,
+    ),
+    Execution(
+      message: true,
+      circuitId: "xyzzza11",
+      runId: "A12SDd891",
+      quantumComputer: "IBM",
+      histogramCounts: {"00": 563, "01": 242, "10": 193, "11": 437},
+      histogramProbabilities: {
+        "00": 0.563,
+        "01": 0.242,
+        "10": 0.193,
+        "11": 0.437,
+      },
+      time: 9.43,
+      shots: 1000,
+    ),
   ];
 
-  List<Map<String, Object>> get filteredExecutions {
-    return allExecutions.where((item) {
-      if (filterSentOut && item["status"] != "sent") return false;
+  List<Execution> get filteredExecutions {
+    return allExecutions.where((exec) {
+      if (filterSentOut && exec.quantumComputer.contains("simulator")) {
+        return false; // exclude simulator if filtering real runs
+      }
       if (selectedHardware.isNotEmpty &&
-          !selectedHardware.contains(item["hardware"])) {
+          !selectedHardware.contains(exec.hardwareDisplayName)) {
         return false;
       }
-      if (selectedDate != null &&
-          !(item["time"]! as String).contains(
-            "${selectedDate!.day} ${_monthName(selectedDate!.month)}",
-          )) {
-        return false;
-      }
+
       return true;
     }).toList();
   }
-
-  String _monthName(int m) => [
-    "Jan",
-    "Feb",
-    "Mar",
-    "Apr",
-    "May",
-    "Jun",
-    "Jul",
-    "Aug",
-    "Sept",
-    "Oct",
-    "Nov",
-    "Dec",
-  ][m - 1];
 
   void _openFilterPanel() {
     Navigator.of(context).push(
@@ -202,46 +153,18 @@ class _ExecHistoryPageState extends State<ExecHistoryPage> {
     );
   }
 
-  Widget _executionCard(BuildContext context, Map<String, Object> item) {
-    final bool sent = item["status"] == "sent";
-    final Color badgeColor = sent ? AppColors.ionGreen : AppColors.emberOrange;
-    final String badgeText = sent ? "Sent" : "Crafted";
+  Widget _executionCard(BuildContext context, Execution exec) {
+    final bool isSimulator = exec.quantumComputer.contains("simulator");
+    final Color badgeColor = isSimulator
+        ? AppColors.emberOrange
+        : AppColors.ionGreen;
+    final String badgeText = isSimulator ? "Simulated" : "Real";
 
     return GestureDetector(
       onTap: () {
-        // Build results map from array of maps
-        final List<dynamic>? histoArray = item["results"] as List<dynamic>;
-        final Map<String, int> resultsMap = {};
-
-        if (histoArray != null) {
-          for (final entry in histoArray) {
-            if (entry is Map<String, dynamic>) {
-              entry.forEach((key, value) {
-                resultsMap[key] = value is int
-                    ? value
-                    : int.tryParse(value.toString()) ?? 0;
-              });
-            }
-          }
-        }
-
         Navigator.push(
           context,
-          MaterialPageRoute(
-            builder: (_) => RunPage(
-              name: item["name"]! as String,
-              status: item["status"]! as String,
-              time: item["time"]! as String,
-              hardware: item["hardware"]! as String,
-              totalTime: item["totalTime"] as String,
-              pendingTime: item["pendingTime"] as String,
-              executionTime: item["executionTime"] as String,
-              perShot: item["perShot"] as String,
-              circuitDepth: item["circuitDepth"] as String,
-              resultCount: item["resultCount"] as String,
-              results: resultsMap,
-            ),
-          ),
+          MaterialPageRoute(builder: (_) => RunPage(execution: exec)),
         );
       },
       child: Container(
@@ -279,7 +202,7 @@ class _ExecHistoryPageState extends State<ExecHistoryPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    item["name"]! as String,
+                    exec.quantumComputer,
                     style: const TextStyle(
                       fontWeight: FontWeight.w600,
                       fontSize: 16,
@@ -287,7 +210,7 @@ class _ExecHistoryPageState extends State<ExecHistoryPage> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    item["time"]! as String,
+                    "Shots: ${exec.shots} • Time: ${exec.time.toStringAsFixed(2)}s",
                     style: const TextStyle(fontSize: 12, color: Colors.black54),
                   ),
                 ],
@@ -337,6 +260,9 @@ class _FilterPanelState extends State<_FilterPanel> {
   late List<String> hardware;
   DateTime? date;
 
+  // Define the fixed hardware categories
+  final List<String> availableHardware = ["IBM", "IonQ", "Simulated"];
+
   @override
   void initState() {
     super.initState();
@@ -379,10 +305,7 @@ class _FilterPanelState extends State<_FilterPanel> {
                       ),
                       decoration: const BoxDecoration(
                         gradient: LinearGradient(
-                          colors: [
-                            AppColors.electricIndigo,
-                            AppColors.emberOrange,
-                          ],
+                          colors: [Color(0xFF6525FE), Color(0xFFF25F1C)],
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                         ),
@@ -412,6 +335,7 @@ class _FilterPanelState extends State<_FilterPanel> {
                       ),
                     ),
 
+                    // Filter body
                     Expanded(
                       child: SingleChildScrollView(
                         padding: const EdgeInsets.all(20),
@@ -437,14 +361,18 @@ class _FilterPanelState extends State<_FilterPanel> {
                               "Select hardware",
                               onClear: () => setState(() => hardware.clear()),
                             ),
-                            ...["IBM", "IonQ", "Simulated"].map((name) {
+
+                            // ✅ Fixed hardware options
+                            ...availableHardware.map((name) {
                               return CheckboxListTile(
                                 value: hardware.contains(name),
                                 onChanged: (v) {
                                   setState(() {
-                                    v!
-                                        ? hardware.add(name)
-                                        : hardware.remove(name);
+                                    if (v == true) {
+                                      hardware.add(name);
+                                    } else {
+                                      hardware.remove(name);
+                                    }
                                   });
                                 },
                                 title: Text(name),
@@ -452,6 +380,7 @@ class _FilterPanelState extends State<_FilterPanel> {
                                     ListTileControlAffinity.leading,
                               );
                             }),
+
                             const Divider(),
 
                             _sectionHeader(
@@ -466,8 +395,9 @@ class _FilterPanelState extends State<_FilterPanel> {
                                   firstDate: DateTime(2020),
                                   lastDate: DateTime(2030),
                                 );
-                                if (picked != null)
+                                if (picked != null) {
                                   setState(() => date = picked);
+                                }
                               },
                               child: Container(
                                 padding: const EdgeInsets.symmetric(
@@ -475,7 +405,7 @@ class _FilterPanelState extends State<_FilterPanel> {
                                   vertical: 14,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: AppColors.saltWhite,
+                                  color: const Color(0xFFF7F8FA),
                                   borderRadius: BorderRadius.circular(8),
                                   border: Border.all(color: Colors.black12),
                                 ),
@@ -504,11 +434,12 @@ class _FilterPanelState extends State<_FilterPanel> {
                   ],
                 ),
 
+                // Apply button
                 Positioned(
                   bottom: 20,
                   right: 20,
                   child: FloatingActionButton(
-                    backgroundColor: AppColors.skyBlue,
+                    backgroundColor: const Color(0xFF1A91FC),
                     onPressed: () {
                       widget.onApply(sentOut, hardware, date);
                       Navigator.pop(context);
@@ -533,7 +464,7 @@ class _FilterPanelState extends State<_FilterPanel> {
           style: const TextStyle(
             fontWeight: FontWeight.w700,
             fontSize: 16,
-            color: AppColors.richBlack,
+            color: Colors.black,
           ),
         ),
         TextButton(onPressed: onClear, child: const Text("Clear")),

@@ -1,40 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:qubi_app/pages/profile/models/execution.dart';
 import 'package:qubi_app/pages/story/story_page.dart';
 
 class RunPage extends StatelessWidget {
-  final String name;
-  final String status;
-  final String time;
-  final String hardware;
-  final String totalTime;
-  final String pendingTime;
-  final String executionTime;
-  final String perShot;
-  final String circuitDepth;
-  final String resultCount;
+  final Execution execution;
 
-  // ✅ Histogram data — passed from component call
-  final Map<String, int> results;
-
-  const RunPage({
-    super.key,
-    required this.name,
-    required this.status,
-    required this.time,
-    required this.hardware,
-    required this.results,
-    this.totalTime = "9.43s",
-    this.pendingTime = "8s",
-    this.executionTime = "1s",
-    this.perShot = "0.001s",
-    this.circuitDepth = "5",
-    this.resultCount = "1000",
-  });
+  const RunPage({super.key, required this.execution});
 
   @override
   Widget build(BuildContext context) {
+    final results = execution.histogramCounts;
+    final totalShots = execution.shots.toString();
+    final runTime = "${execution.time.toStringAsFixed(3)} s";
+
     return Scaffold(
       backgroundColor: const Color(0xFFE6EEF8),
       bottomNavigationBar: Column(
@@ -111,11 +91,9 @@ class RunPage extends StatelessWidget {
           children: [
             _executorCard(),
             const SizedBox(height: 20),
-            _timingCard(),
-            const SizedBox(height: 15),
             _circuitCard(),
             const SizedBox(height: 12),
-            _resultsCard(), // ✅ dynamic histogram here
+            _resultsCard(results, totalShots, runTime),
           ],
         ),
       ),
@@ -148,7 +126,7 @@ class RunPage extends StatelessWidget {
                 ),
                 const SizedBox(width: 6),
                 Text(
-                  name,
+                  execution.quantumComputer,
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w900,
@@ -159,71 +137,12 @@ class RunPage extends StatelessWidget {
             ),
           ],
         ),
-        const SizedBox(height: 6),
-        Text(
-          "$hardware quantum backend — $time",
-          style: const TextStyle(
-            fontSize: 13,
-            color: Colors.black54,
-            fontWeight: FontWeight.w400,
-          ),
-        ),
       ],
     ),
   );
 
   // ----------------------------------------------------------
-  // TIMING CARD
-  // ----------------------------------------------------------
-  Widget _timingCard() => Container(
-    width: double.infinity,
-    decoration: _cardDecoration(),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                "Timing",
-                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
-              ),
-              Text(
-                "Total time: $totalTime",
-                style: const TextStyle(
-                  fontSize: 14,
-                  color: Colors.black,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ],
-          ),
-        ),
-        const Divider(color: Color(0xFFE0E6ED), height: 1),
-        IntrinsicHeight(
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Expanded(child: _buildTimingColumn("Pending time", pendingTime)),
-              Container(width: 1, color: const Color(0xFFE0E6ED)),
-              Expanded(
-                child: _buildTimingColumn("Execution time", executionTime),
-              ),
-              Container(width: 1, color: const Color(0xFFE0E6ED)),
-              Expanded(
-                child: _buildTimingColumn("Per shot", perShot, isBlue: true),
-              ),
-            ],
-          ),
-        ),
-      ],
-    ),
-  );
-
-  // ----------------------------------------------------------
-  // CIRCUIT CARD (fixed image)
+  // CIRCUIT CARD (placeholder image)
   // ----------------------------------------------------------
   Widget _circuitCard() => Container(
     width: double.infinity,
@@ -241,9 +160,9 @@ class RunPage extends StatelessWidget {
                 style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
               ),
               Text(
-                "Depth $circuitDepth",
+                "Run ID: ${execution.runId}",
                 style: const TextStyle(
-                  fontSize: 14,
+                  fontSize: 13,
                   color: Colors.black54,
                   fontWeight: FontWeight.w700,
                 ),
@@ -251,12 +170,13 @@ class RunPage extends StatelessWidget {
             ],
           ),
         ),
+
         const Divider(color: Color(0xFFE0E6ED), height: 1),
         Container(
           margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
           width: double.infinity,
           child: SvgPicture.asset(
-            'assets/images/circuit1.svg', // same image for all
+            'assets/images/circuit1.svg',
             height: 140,
             fit: BoxFit.contain,
           ),
@@ -268,7 +188,11 @@ class RunPage extends StatelessWidget {
   // ----------------------------------------------------------
   // RESULTS CARD — histogram
   // ----------------------------------------------------------
-  Widget _resultsCard() {
+  Widget _resultsCard(
+    Map<String, int> results,
+    String totalShots,
+    String runTime,
+  ) {
     if (results.isEmpty) {
       return Container(
         padding: const EdgeInsets.all(16),
@@ -355,7 +279,6 @@ class RunPage extends StatelessWidget {
                             end: Alignment.topCenter,
                           ),
                           borderRadius: BorderRadius.circular(4),
-                          rodStackItems: [],
                         ),
                       ],
                     ),
@@ -369,13 +292,26 @@ class RunPage extends StatelessWidget {
           const SizedBox(height: 8),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: Text(
-              "Total shots: $resultCount",
-              style: const TextStyle(
-                fontSize: 13,
-                color: Colors.black54,
-                fontWeight: FontWeight.w500,
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "Total shots: $totalShots",
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: Colors.black54,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                Text(
+                  "Run time: $runTime",
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: Colors.black54,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -384,42 +320,8 @@ class RunPage extends StatelessWidget {
   }
 
   // ----------------------------------------------------------
-  // HELPER WIDGETS
+  // HELPERS
   // ----------------------------------------------------------
-  static Widget _buildTimingColumn(
-    String label,
-    String value, {
-    bool isBlue = false,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(
-            label,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              color: Colors.black,
-              fontSize: 13,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            value,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: isBlue ? const Color(0xFF1A91FC) : Colors.black,
-              fontSize: 14,
-              fontWeight: FontWeight.w900,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   BoxDecoration _cardDecoration() => BoxDecoration(
     color: Colors.white,
     borderRadius: BorderRadius.circular(20),
