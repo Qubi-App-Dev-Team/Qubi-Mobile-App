@@ -114,19 +114,30 @@ class ProfileCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final User? user = Auth().currentUser;
+    final String? email = user?.email;
+    //grab the part of the user's email before the "@" to display
+    final String displayName = (email != null && email.contains('@'))
+        ? email.split('@').first
+        : 'Unknown User';
+        
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
       decoration: cardDecoration(),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const CircleAvatar(
-            radius: 36,
-            backgroundImage: AssetImage('assets/images/Picture.png'),
+          // SVG avatar inside a circular clip
+          ClipOval(
+            child: SvgPicture.asset(
+              'assets/images/generic_pfp.svg',
+              width: 72,  // double the radius (CircleAvatar radius = 36)
+              height: 72,
+              fit: BoxFit.cover,
+            ),
           ),
           const SizedBox(height: 16),
-          const Text(
-            'Bucky Qzdemir',
+          Text(
+            displayName,
             style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: 6),

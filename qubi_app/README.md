@@ -64,11 +64,13 @@ In order to run your application, type:
 `flutter run -d iPhone-15`
 
 ### Troubleshooting
-- If cocoapods gives errors, try:  
+- **If cocoapods gives errors, try:**  
 `cd ios`   
 `pod install`  
 If you’re on Apple Silicon (M1/M2/M3), use: `arch -x86_64 pod install`
 
-- If getting an error "failed to codesign", add the line: `CODE_SIGNING_ALLOWED = NO`  
-in qubi_app/ios/Flutter/Release.xcconfig &
-qubi_app/ios/Flutter/Debug.xcconfig
+
+- **DO NOT INCLUDE THE LINE**: CODE_SIGNING_ALLOWED = NO  
+in qubi_app/ios/Flutter/Release.xcconfig or  
+qubi_app/ios/Flutter/Debug.xcconfig  
+anymore. it will break login. 
