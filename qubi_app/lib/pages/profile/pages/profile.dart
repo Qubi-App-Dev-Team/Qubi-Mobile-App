@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:qubi_app/components/app_backdrop.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:qubi_app/auth.dart';
 import 'package:qubi_app/pages/profile/pages/exec_history.dart';
 import 'package:qubi_app/pages/profile/pages/default_settings.dart';
 import 'package:qubi_app/pages/profile/components/theme_selector.dart';
@@ -109,27 +111,39 @@ class ProfilePage extends StatelessWidget {
 
 class ProfileCard extends StatelessWidget {
   const ProfileCard({super.key});
-
+  
   @override
   Widget build(BuildContext context) {
+    final User? user = Auth().currentUser;
+    final String? email = user?.email;
+    //grab the part of the user's email before the "@" to display
+    final String displayName = (email != null && email.contains('@'))
+        ? email.split('@').first
+        : 'Unknown User';
+        
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
       decoration: cardDecoration(),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const CircleAvatar(
-            radius: 36,
-            backgroundImage: AssetImage('assets/images/Picture.png'),
+          // SVG avatar inside a circular clip
+          ClipOval(
+            child: SvgPicture.asset(
+              'assets/images/generic_pfp.svg',
+              width: 72,  // double the radius (CircleAvatar radius = 36)
+              height: 72,
+              fit: BoxFit.cover,
+            ),
           ),
           const SizedBox(height: 16),
-          const Text(
-            'Bucky Qzdemir',
+          Text(
+            displayName,
             style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: 6),
           Text(
-            'Bucky@qolour.io',
+            user?.email ?? '<user email',
             style: TextStyle(
               fontSize: 15,
               color: Colors.black.withValues(alpha: 0.55),
@@ -238,6 +252,15 @@ class SettingsSection extends StatelessWidget {
             title: 'Learn more quantum',
             subtitle: 'Resources, events, and communities at qolour.io',
             onTap: () => openExternal('https://www.qolour.io/'),
+          ),
+          Divider(height: 1, color: Color(0xFFECECEC)),
+
+          // 3) Log Out
+          SettingTile(
+            svgAsset: 'assets/images/sign_out.svg', // ← matches your repo
+            title: 'Sign Out',
+            subtitle: 'Log out from your user session.',
+            onTap: () async { await Auth().signOut(); },
           ),
         ],
       ),
