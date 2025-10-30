@@ -1,14 +1,45 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:qubi_app/pages/home/run.dart';
-import 'package:qubi_app/pages/story/story_page.dart';
+import 'package:qubi_app/pages/profile/models/execution.dart';
 import 'package:qubi_app/pages/home/executor.dart';
+import 'package:qubi_app/pages/story/story_page.dart';
+import 'package:qubi_app/pages/home/run.dart';
 
 class CircuitSection extends StatelessWidget {
   const CircuitSection({super.key});
 
   @override
   Widget build(BuildContext context) {
+    // Sample executions — replace later with live backend data.
+    final List<Execution> executionData = [
+      Execution(
+        message: true,
+        circuitId:
+            "abe6d955a212c337fa16498d5a378782330be5dc65e1bbc404a41f87383f3119",
+        runId: "Qv6DySvo3mjfiQLHkf8B",
+        quantumComputer: "IBM",
+        histogramCounts: {"00": 563, "01": 242, "10": 193, "11": 437},
+        histogramProbabilities: {
+          "00": 0.563,
+          "01": 0.242,
+          "10": 0.193,
+          "11": 0.437,
+        },
+        time: 9.43,
+        shots: 1000,
+      ),
+      Execution(
+        message: true,
+        circuitId: "ionq_002",
+        runId: "IonQxG7DaA",
+        quantumComputer: "IonQ",
+        histogramCounts: {"0": 112, "1": 88},
+        histogramProbabilities: {"0": 0.56, "1": 0.44},
+        time: 2.12,
+        shots: 200,
+      ),
+    ];
+
     return Column(
       children: [
         // 🔹 Top gradient container
@@ -20,10 +51,7 @@ class CircuitSection extends StatelessWidget {
             gradient: const LinearGradient(
               begin: Alignment.bottomLeft,
               end: Alignment.topRight,
-              colors: [
-                Color(0xFF6525FE), // purple
-                Color(0xFFF25F1C), // orange
-              ],
+              colors: [Color(0xFF6525FE), Color(0xFFF25F1C)],
             ),
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
@@ -45,28 +73,25 @@ class CircuitSection extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.start,
                 children: [
-                  // "Read Report" → RunPage()
+                  // "Read Report" → RunPage (with full model)
                   GestureDetector(
                     onTap: () {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const RunPage(),
+                          builder: (_) => RunPage(execution: executionData[0]),
                         ),
                       );
                     },
                     child: buildGradientButton("Read Report", true),
                   ),
                   const SizedBox(width: 12),
-
-                  // "Skip to Story" (→ StoryPage)
+                  // "Skip to Story"
                   GestureDetector(
                     onTap: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(
-                          builder: (context) => const StoryPage(),
-                        ),
+                        MaterialPageRoute(builder: (_) => const StoryPage()),
                       );
                     },
                     child: buildGradientButton("Skip to Story", false),
@@ -79,8 +104,12 @@ class CircuitSection extends StatelessWidget {
 
         // 🔹 Pending circuit header
         Container(
-          margin:
-              const EdgeInsets.only(left: 16, right: 16, top: 10, bottom: 5),
+          margin: const EdgeInsets.only(
+            left: 16,
+            right: 16,
+            top: 10,
+            bottom: 5,
+          ),
           child: const Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -121,10 +150,7 @@ class CircuitSection extends StatelessWidget {
             gradient: const LinearGradient(
               begin: Alignment.bottomLeft,
               end: Alignment.topRight,
-              colors: [
-                Color(0xFF6525FE), // purple
-                Color(0xFF1A91FC), // blue
-              ],
+              colors: [Color(0xFF6525FE), Color(0xFF1A91FC)],
             ),
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
@@ -139,7 +165,7 @@ class CircuitSection extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text(
-                "Select executor",
+                "Select & Run",
                 style: TextStyle(color: Colors.white, fontSize: 16),
               ),
               const SizedBox(height: 6),
@@ -147,11 +173,8 @@ class CircuitSection extends StatelessWidget {
                 onTap: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(
-                      builder: (context) => const ExecutorPage(),
-                    ),
+                    MaterialPageRoute(builder: (_) => const ExecutorPage()),
                   );
-                  debugPrint('hello');
                 },
                 child: Container(
                   padding: const EdgeInsets.symmetric(
@@ -189,6 +212,52 @@ class CircuitSection extends StatelessWidget {
                   ),
                 ),
               ),
+
+              const SizedBox(height: 10),
+
+              // 🔸 Run Pending Circuit Button → RunPage (same model)
+              GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => RunPage(execution: executionData[1]),
+                    ),
+                  );
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      begin: Alignment.bottomLeft,
+                      end: Alignment.topRight,
+                      colors: [Color(0xFFFF3B30), Color(0xFFFFC107)],
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        "Run Pending Circuit",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 14.5,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      Icon(
+                        Icons.play_arrow_rounded,
+                        size: 20,
+                        color: Colors.white,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ],
           ),
         ),
@@ -218,11 +287,7 @@ class CircuitSection extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 4),
-          const Icon(
-            Icons.arrow_forward_ios,
-            size: 12,
-            color: Colors.white,
-          ),
+          const Icon(Icons.arrow_forward_ios, size: 12, color: Colors.white),
         ],
       ),
     );
