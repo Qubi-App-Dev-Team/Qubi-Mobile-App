@@ -7,8 +7,5 @@ __pycache__
 nodesource_setup.sh
 firebase.json
 firebase_options.dart
-*ios/Runner/GoogleService-Info.plist
-*ios/Runner/Info.plist
-*android/app/google-services.json
 
 .idea
