@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:qubi_app/pages/profile/models/execution.dart';
 import 'package:qubi_app/pages/home/executor.dart';
 import 'package:qubi_app/pages/story/story_page.dart';
 import 'package:qubi_app/pages/home/run.dart';
@@ -9,34 +10,34 @@ class CircuitSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // You can later replace these with live circuit/execution data if needed.
-    final List<Map<String, dynamic>> executionData = [
-      {
-        "name": "IBM Hanoi",
-        "status": "sent",
-        "time": "27 Oct 2025 2:41 AM",
-        "hardware": "IBM",
-        "totalTime": "9.43s",
-        "pendingTime": "8s",
-        "executionTime": "1s",
-        "perShot": "0.001s",
-        "circuitDepth": "5",
-        "resultCount": "1000",
-        "results": {"00": 563, "01": 242, "10": 193, "11": 437},
-      },
-      {
-        "name": "IonQ Harmony",
-        "status": "crafted",
-        "time": "26 Oct 2025 5:10 PM",
-        "hardware": "IonQ",
-        "totalTime": "2.12s",
-        "pendingTime": "1.2s",
-        "executionTime": "0.9s",
-        "perShot": "0.002s",
-        "circuitDepth": "3",
-        "resultCount": "200",
-        "results": {"0": 112, "1": 88},
-      },
+    // Sample executions — replace later with live backend data.
+    final List<Execution> executionData = [
+      Execution(
+        message: true,
+        circuitId:
+            "abe6d955a212c337fa16498d5a378782330be5dc65e1bbc404a41f87383f3119",
+        runId: "Qv6DySvo3mjfiQLHkf8B",
+        quantumComputer: "IBM",
+        histogramCounts: {"00": 563, "01": 242, "10": 193, "11": 437},
+        histogramProbabilities: {
+          "00": 0.563,
+          "01": 0.242,
+          "10": 0.193,
+          "11": 0.437,
+        },
+        time: 9.43,
+        shots: 1000,
+      ),
+      Execution(
+        message: true,
+        circuitId: "ionq_002",
+        runId: "IonQxG7DaA",
+        quantumComputer: "IonQ",
+        histogramCounts: {"0": 112, "1": 88},
+        histogramProbabilities: {"0": 0.56, "1": 0.44},
+        time: 2.12,
+        shots: 200,
+      ),
     ];
 
     return Column(
@@ -50,10 +51,7 @@ class CircuitSection extends StatelessWidget {
             gradient: const LinearGradient(
               begin: Alignment.bottomLeft,
               end: Alignment.topRight,
-              colors: [
-                Color(0xFF6525FE), // purple
-                Color(0xFFF25F1C), // orange
-              ],
+              colors: [Color(0xFF6525FE), Color(0xFFF25F1C)],
             ),
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
@@ -75,36 +73,20 @@ class CircuitSection extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.start,
                 children: [
-                  // "Read Report" → RunPage (with full data)
+                  // "Read Report" → RunPage (with full model)
                   GestureDetector(
                     onTap: () {
-                      final item = executionData[0];
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => RunPage(
-                            name: item["name"],
-                            status: item["status"],
-                            time: item["time"],
-                            hardware: item["hardware"],
-                            totalTime: item["totalTime"],
-                            pendingTime: item["pendingTime"],
-                            executionTime: item["executionTime"],
-                            perShot: item["perShot"],
-                            circuitDepth: item["circuitDepth"],
-                            resultCount: item["resultCount"],
-                            results: Map<String, int>.from(item["results"]),
-                          ),
+                          builder: (_) => RunPage(execution: executionData[0]),
                         ),
                       );
                     },
-
                     child: buildGradientButton("Read Report", true),
                   ),
-
                   const SizedBox(width: 12),
-
-                  // "Skip to Story" (→ StoryPage)
+                  // "Skip to Story"
                   GestureDetector(
                     onTap: () {
                       Navigator.push(
@@ -168,10 +150,7 @@ class CircuitSection extends StatelessWidget {
             gradient: const LinearGradient(
               begin: Alignment.bottomLeft,
               end: Alignment.topRight,
-              colors: [
-                Color(0xFF6525FE), // purple
-                Color(0xFF1A91FC), // blue
-              ],
+              colors: [Color(0xFF6525FE), Color(0xFF1A91FC)],
             ),
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
@@ -236,30 +215,16 @@ class CircuitSection extends StatelessWidget {
 
               const SizedBox(height: 10),
 
-              // 🔸 Run Pending Circuit Button → new RunPage (same data)
+              // 🔸 Run Pending Circuit Button → RunPage (same model)
               GestureDetector(
                 onTap: () {
-                  final item = executionData[1];
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => RunPage(
-                        name: item["name"],
-                        status: item["status"],
-                        time: item["time"],
-                        hardware: item["hardware"],
-                        totalTime: item["totalTime"],
-                        pendingTime: item["pendingTime"],
-                        executionTime: item["executionTime"],
-                        perShot: item["perShot"],
-                        circuitDepth: item["circuitDepth"],
-                        resultCount: item["resultCount"],
-                        results: Map<String, int>.from(item["results"]),
-                      ),
+                      builder: (_) => RunPage(execution: executionData[1]),
                     ),
                   );
                 },
-
                 child: Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 10,
