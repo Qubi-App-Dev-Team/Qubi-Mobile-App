@@ -40,22 +40,17 @@ app.*.symbols
 # Obfuscation related
 app.*.map.json
 
-<<<<<<< HEAD
 # Firebase config files
 ios/Runner/GoogleService-Info.plist
 ios/Runner/Info.plist
 android/app/google-services.json
 
-=======
->>>>>>> origin/frontend_main
 # Android Studio will place build artifacts here
 /android/app/debug
 /android/app/profile
 /android/app/release
 
 qubi_app/lib/main_shell.dart
-<<<<<<< HEAD
-=======
 
 # CocoaPods
 ios/Pods/
@@ -69,4 +64,3 @@ build/
 # IDE
 .vscode/
 .idea/
->>>>>>> origin/frontend_main
