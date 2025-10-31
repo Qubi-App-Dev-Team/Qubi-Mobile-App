@@ -7,9 +7,17 @@ import 'package:flutter/foundation.dart';
 class Chapter {
   final int number;
   final String title;
+  final double progress;
+  final String difficulty;
+  final bool locked; 
+  final int skinsUnlocked;
 
   const Chapter({
     required this.number,
     required this.title,
+    required this.progress,
+    required this.difficulty,
+    required this.locked,
+    required this.skinsUnlocked
   });
 }
