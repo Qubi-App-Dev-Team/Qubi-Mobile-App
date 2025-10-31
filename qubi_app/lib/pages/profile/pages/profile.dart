@@ -3,8 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:qubi_app/components/app_backdrop.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'exec_history.dart';
-import 'default_settings.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:qubi_app/auth.dart';
+import 'package:qubi_app/pages/profile/pages/exec_history.dart';
+import 'package:qubi_app/pages/profile/pages/default_settings.dart';
+import 'package:qubi_app/pages/profile/components/theme_selector.dart';
 
 Future<void> openExternal(String url) async {
   final uri = Uri.parse(url);
@@ -108,27 +111,39 @@ class ProfilePage extends StatelessWidget {
 
 class ProfileCard extends StatelessWidget {
   const ProfileCard({super.key});
-
+  
   @override
   Widget build(BuildContext context) {
+    final User? user = Auth().currentUser;
+    final String? email = user?.email;
+    //grab the part of the user's email before the "@" to display
+    final String displayName = (email != null && email.contains('@'))
+        ? email.split('@').first
+        : 'Unknown User';
+        
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
       decoration: cardDecoration(),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const CircleAvatar(
-            radius: 36,
-            backgroundImage: AssetImage('assets/images/Picture.png'),
+          // SVG avatar inside a circular clip
+          ClipOval(
+            child: SvgPicture.asset(
+              'assets/images/generic_pfp.svg',
+              width: 72,  // double the radius (CircleAvatar radius = 36)
+              height: 72,
+              fit: BoxFit.cover,
+            ),
           ),
           const SizedBox(height: 16),
-          const Text(
-            'Bucky Qzdemir',
+          Text(
+            displayName,
             style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: 6),
           Text(
-            'Bucky@qolour.io',
+            user?.email ?? '<user email',
             style: TextStyle(
               fontSize: 15,
               color: Colors.black.withValues(alpha: 0.55),
@@ -149,39 +164,24 @@ class ThemeCollectionCard extends StatefulWidget {
 }
 
 class _ThemeCollectionCardState extends State<ThemeCollectionCard> {
-  // 1..6 — set the default selected dot here
-  int _selectedIndex = 1;
+  int selectedIndex = 0;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      // white border will be white.
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
-      decoration: BoxDecoration(
-        color: const Color(0x190B1521),
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.6)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 12,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
+      decoration: cardDecoration(),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
               const Text(
-                // Header
                 'Your theme collection',
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.w200),
               ),
               const Spacer(),
               Text(
-                // Right side text - shows count of options listed.
                 '6/20',
                 style: TextStyle(
                   fontWeight: FontWeight.w600,
@@ -191,59 +191,11 @@ class _ThemeCollectionCardState extends State<ThemeCollectionCard> {
             ],
           ),
           const SizedBox(height: 12),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: List.generate(6, (i) {
-                final idx = i + 1; // 1..6
-                return _ThemeDotSvg(
-                  index: idx,
-                  selected: _selectedIndex == idx,
-                  onTap: () => setState(() => _selectedIndex = idx),
-                );
-              }),
-            ),
+          ThemeSelector(
+            selectedIndex: selectedIndex,
+            onSelect: (i) => setState(() => selectedIndex = i),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _ThemeDotSvg extends StatelessWidget {
-  final int index; // 1..6
-  final bool selected;
-  final VoidCallback? onTap;
-
-  const _ThemeDotSvg({
-    required this.index,
-    this.selected = false,
-    this.onTap,
-  }); // images are pulled from assets/images/ folder.
-
-  @override
-  Widget build(BuildContext context) {
-    // base case image.
-    final assetName =
-        'assets/images/themedot${index}${selected ? 'selected' : ''}.svg';
-
-    // on click -> change which element has an check mark on it (selected).
-    return GestureDetector(
-      onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      // Changing image to one with check mark if selected.
-      child: Container(
-        margin: const EdgeInsets.only(right: 10),
-        width: 45.17,
-        height: 46.5,
-        alignment: Alignment.center,
-        child: SvgPicture.asset(
-          assetName,
-          width: 45.17,
-          height: 46.5,
-          fit: BoxFit.contain,
-          semanticsLabel: 'Theme dot $index ${selected ? 'selected' : ''}',
-        ),
       ),
     );
   }
@@ -300,6 +252,15 @@ class SettingsSection extends StatelessWidget {
             title: 'Learn more quantum',
             subtitle: 'Resources, events, and communities at qolour.io',
             onTap: () => openExternal('https://www.qolour.io/'),
+          ),
+          Divider(height: 1, color: Color(0xFFECECEC)),
+
+          // 3) Log Out
+          SettingTile(
+            svgAsset: 'assets/images/sign_out.svg', // ← matches your repo
+            title: 'Sign Out',
+            subtitle: 'Log out from your user session.',
+            onTap: () async { await Auth().signOut(); },
           ),
         ],
       ),

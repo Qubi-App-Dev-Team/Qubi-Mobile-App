@@ -3,7 +3,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 
 import '../pages/home/home.dart'; //home page
 import '../pages/learn/pages/all_chapters_page.dart'; //learning page
-import '../pages/profile/profile.dart'; //user profile page
+import '../pages/profile/pages/profile.dart'; //user profile page
 
 //Mobile app bottom navigation bar
 class NavBar extends StatefulWidget {
