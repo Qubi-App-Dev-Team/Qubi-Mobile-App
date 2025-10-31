@@ -5,6 +5,7 @@ import 'package:qubi_app/pages/learn/pages/section_content_page.dart';
 import 'package:qubi_app/pages/learn/components/gradient_progress_bar.dart';
 import 'package:qubi_app/pages/learn/components/info_badge.dart';
 import 'package:qubi_app/pages/learn/models/renderer.dart';
+import 'package:qubi_app/pages/learn/bloc/chapter_data_store.dart';
 
 /// A simplified vertical list of section modules for a chapter (no difficulty groups).
 /// Each tile shows:
@@ -44,19 +45,45 @@ class _ChapterContentSectionState extends State<ChapterContentSection> {
                 // Capture Navigator BEFORE any await to avoid using context across async gaps.
                 final navigator = Navigator.of(context);
 
+                // If locked, ask for confirmation.
                 if (content.locked) {
                   final proceed = await _confirmProceedDialog(context);
                   if (proceed != true) return;
                 }
+
+                // Determine the section number (prefer model's number, else fallback by index).
+                final int chapterNum = chapter.number;
+                final int sectionNum =
+                    (content.number != 0) ? content.number : (widget.items.indexOf(content) + 1);
+
+                // Preload all pages for this section into the router cache.
+                await ChapterDataStore.loadAllSectionPages(
+                  chapterNum: chapterNum,
+                  sectionNum: sectionNum,
+                );
+
+                if (!context.mounted) return;
+
+                // Resolve actual total pages (fallback to 1).
+                int totalPages = ChapterDataStore.totalSectionPages(
+                  chapterNum: chapterNum,
+                  sectionNum: sectionNum,
+                );
+                if (totalPages < 1) totalPages = 1;
 
                 navigator.push(
                   MaterialPageRoute(
                     builder: (_) => SectionContentPage(
                       chapter: chapter,
                       content: content,
-                      totalPages: 3,
-                      buildPage: ({required chapter, required section, required pageNumber}) {
-                        return renderSectionPageFromCache(
+                      totalPages: totalPages,
+                      // ⬇️ ASYNC buildPage: awaits the async renderer
+                      buildPage: ({
+                        required Chapter chapter,
+                        required ChapterContent section,
+                        required int pageNumber,
+                      }) async {
+                        return await renderSectionPageFromCache(
                           chapter: chapter,
                           section: section,
                           pageNumber: pageNumber,
@@ -123,7 +150,7 @@ class _SectionTile extends StatelessWidget {
     final percentText = '${(clampedProgress * 100).round()}% progress';
 
     // Use item.number if provided; otherwise fall back to list index.
-    final int sectionNumber = item.number;
+    final int sectionNumber = item.number == 0 ? sectionIndexFallback : item.number;
 
     return Material(
       color: Colors.white,
