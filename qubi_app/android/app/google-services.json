@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "1089050438573-3q346kjfuu7mh20al7q3ot090v8p9qco.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.qubi_app",
+            "certificate_hash": "c0d36595455d1b458c4b5fb0d5ba5365fce286f5"
+          }
+        },
+        {
           "client_id": "1089050438573-kv3h229p7bscg4mp4ogtdhth47e2r396.apps.googleusercontent.com",
           "client_type": 3
         }
