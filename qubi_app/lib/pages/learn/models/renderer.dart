@@ -8,6 +8,7 @@ import 'package:qubi_app/pages/learn/components/section_page_header.dart';
 import 'package:qubi_app/pages/learn/components/section_page_paragraph.dart';
 import 'package:qubi_app/pages/learn/components/section_page_network_image.dart';
 import 'package:qubi_app/pages/learn/components/prompt_option_button.dart';
+import 'package:qubi_app/pages/learn/components/section_page_youtube_video.dart';
 // Your router spec cache: Map<String, List<Map<String, dynamic>>>
 import 'package:qubi_app/pages/learn/models/section_routes.dart';
 import 'package:flutter/foundation.dart';
@@ -73,6 +74,15 @@ Future<List<Widget>> renderSectionPageFromCache({
           if (url.isEmpty) break;
           widgets
             ..add(SectionPageNetworkImage(url: url))
+            ..add(const SizedBox(height: 8));
+          break;
+        }
+
+        case 'video': {
+          final url = (value ?? '').toString().trim();
+          if (url.isEmpty) break;
+          widgets
+            ..add(SectionPageYouTubeVideo(url: url))
             ..add(const SizedBox(height: 8));
           break;
         }
@@ -184,6 +194,15 @@ List<Widget> _buildPromptChildren(List<dynamic> innerSpecs) {
           if (url.isEmpty) break;
           children
             ..add(SectionPageNetworkImage(url: url))
+            ..add(const SizedBox(height: 10));
+          break;
+        }
+
+        case 'video': {
+          final url = (value ?? '').toString().trim();
+          if (url.isEmpty) break;
+          children
+            ..add(SectionPageYouTubeVideo(url: url))
             ..add(const SizedBox(height: 10));
           break;
         }
