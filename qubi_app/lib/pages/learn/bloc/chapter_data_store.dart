@@ -9,6 +9,8 @@ import 'package:qubi_app/pages/learn/models/chapter.dart';
 import 'package:qubi_app/pages/learn/models/chapter_content.dart';
 import 'package:qubi_app/pages/learn/models/section_routes.dart';
 
+import 'package:qubi_app/user_bloc/stored_user_info.dart';
+
 /// Central data store for 'chapters'.
 /// - Static in-memory cache so all imports share the latest data
 /// - Persists to a local JSON file for offline use
@@ -94,16 +96,13 @@ class ChapterDataStore {
   }
 
   static Future<List<Chapter>> loadAllChapters() async{
-    List<Chapter> chapterModels = [];
+    List<Chapter> chapterModels = [];;
     for (final data in chapters){
       chapterModels.add(
         Chapter(
           number: data['number'],
           title: data['title'],
-          progress: 0,
           difficulty: data['diff'],
-          locked: false,
-          skinsUnlocked: 0
         )
       );
     }
@@ -119,7 +118,7 @@ class ChapterDataStore {
         ChapterContent(
           title: sectionData['title'],
           description: sectionData['description'],
-          locked: false,
+          locked: StoredUserInfo.isSectionLocked(chapterNum: chapterNum, sectionNum: i),
           number: i 
         )
       );
@@ -129,7 +128,7 @@ class ChapterDataStore {
     return finalSections;
   }
 
-  static Future<void> loadAllSectionPages({required int chapterNum, required int sectionNum,}) async {
+  static Future<void> loadAllSectionPages({required int chapterNum, required int sectionNum}) async {
     final List<dynamic> relevantPages = chapters[chapterNum - 1]['sections'][sectionNum - 1]['pages'];
     int pageNum = 1;
     for (final page in relevantPages) {
@@ -143,6 +142,14 @@ class ChapterDataStore {
 
   static int totalSectionPages({required int chapterNum, required int sectionNum}){
     return chapters[chapterNum - 1]['sections'][sectionNum-1]['pages'].length;
+  }
+
+  static List<int> sectionsPerChapter(){
+    List<int> chapterPages = [];
+    for (final chapterData in chapters){
+      chapterPages.add(chapterData['sections'].length);
+    }
+    return chapterPages;
   }
 
 

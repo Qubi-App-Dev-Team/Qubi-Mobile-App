@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+
 import 'package:qubi_app/pages/learn/models/chapter.dart';
 import 'package:qubi_app/pages/learn/models/chapter_content.dart';
 
@@ -7,11 +9,11 @@ import 'package:qubi_app/pages/learn/styles/content_styles.dart';
 import 'package:qubi_app/pages/learn/components/section_page_header.dart';
 import 'package:qubi_app/pages/learn/components/section_page_paragraph.dart';
 import 'package:qubi_app/pages/learn/components/section_page_network_image.dart';
-import 'package:qubi_app/pages/learn/components/prompt_option_button.dart';
 import 'package:qubi_app/pages/learn/components/section_page_youtube_video.dart';
-// Your router spec cache: Map<String, List<Map<String, dynamic>>>
+import 'package:qubi_app/pages/learn/components/prompt_options_group.dart';
+
 import 'package:qubi_app/pages/learn/models/section_routes.dart';
-import 'package:flutter/foundation.dart';
+import 'package:qubi_app/user_bloc/stored_user_info.dart';
 
 /// "chapter.section.page" (e.g., "1.2.3")
 String sectionPageKey({
@@ -88,7 +90,6 @@ Future<List<Widget>> renderSectionPageFromCache({
         }
 
         case 'list': {
-          // top-level bulleted list
           final items = _asStringList(value);
           if (items.isEmpty) break;
           widgets
@@ -98,19 +99,15 @@ Future<List<Widget>> renderSectionPageFromCache({
         }
 
         case 'prompt': {
-          // PROMPT expects a List of inner maps, each with exactly one key/value.
+          // PROMPT expects a List of inner maps (each may be single-key OR multi-key for options).
           if (value is! List) {
-            // Skip silently; log in debug
             if (kDebugMode) {
               debugPrint('[renderer] prompt expects a List<Map>, got: ${value.runtimeType}');
             }
             break;
           }
 
-          final promptChildren = _buildPromptChildren(
-            value.cast<dynamic>(),
-          );
-
+          final promptChildren = _buildPromptChildren(value.cast<dynamic>(), chapter.number, section.number, pageNumber);
           if (promptChildren.isEmpty) break;
 
           widgets
@@ -135,7 +132,6 @@ Future<List<Widget>> renderSectionPageFromCache({
         }
 
         default:
-          // Unknown/unsupported block (e.g., "answer"): skip silently.
           if (kDebugMode) {
             debugPrint('[renderer] Skipping unsupported block type: $type');
           }
@@ -146,7 +142,6 @@ Future<List<Widget>> renderSectionPageFromCache({
         debugPrint('[renderer] Error rendering block $block: $e');
         debugPrint('$st');
       }
-      // Add a very small, unobtrusive warning spacer (or omit entirely)
       widgets.add(const SizedBox(height: 8));
     }
   }
@@ -156,21 +151,55 @@ Future<List<Widget>> renderSectionPageFromCache({
 }
 
 /// Builds the vertical contents INSIDE a prompt card from a List<Map>.
-/// Supported inner blocks: header, paragraph, image, options
-List<Widget> _buildPromptChildren(List<dynamic> innerSpecs) {
+/// Supported inner blocks: header, paragraph, image, video, list, options (multi-key supported)
+List<Widget> _buildPromptChildren(List<dynamic> innerSpecs, int chapterNum, int sectionNum, int pageNum) {
   final children = <Widget>[];
 
   for (final raw in innerSpecs) {
     try {
       if (raw is! Map || raw.isEmpty) {
-        debugPrint('Inner type of prompt was not a map: ${raw.runtimeType}');
+        if (kDebugMode) debugPrint('Prompt child not a Map: ${raw.runtimeType}');
         continue;
       }
-      // For prompt inner blocks, each entry is a single-key map, e.g. { "header": "Text" }
-      final String type = raw.keys.first.toString();
-      final dynamic value = raw[type];
 
-      switch (type.toLowerCase()) {
+      // If this map declares "options", treat it as an options group (multi-key allowed)
+      if (raw.containsKey('Options') || raw.containsKey('options')) {
+        final List<String> options = _asStringList(raw.containsKey('Options') ? raw['Options'] : raw['options']);
+
+        int answerIndex = 0;
+        String explanation = '';
+
+        if (raw.containsKey('Answer') || raw.containsKey('answer')){
+          answerIndex = raw.containsKey('Answer') ? raw['Answer'] : raw['answer'];
+        }
+        if (raw.containsKey('Explanation') || raw.containsKey('explanation')){
+          explanation = raw.containsKey('Explanation') ? raw['Explanation'] : raw['explanation'];
+        }
+
+        if (options.isNotEmpty) {
+          children.add(
+            PromptOptionsGroup(
+              options: options,
+              answerIndex: answerIndex,        // can be null → no correct answer highlighted
+              explanation: explanation,        // can be null/empty → hidden
+              alternateColors: true,
+              onChecked:(isCorrect) => {
+                if (isCorrect) {StoredUserInfo.updateProgress(chapterNum: chapterNum, sectionNum: sectionNum, pageNum: pageNum)}
+              },
+              allowRetry: true,
+            ),
+          );
+          children.add(const SizedBox(height: 10));
+        }
+        // Continue to next child; don't try to infer a "type" for this map.
+        continue;
+      }
+
+      // Otherwise, process as single-key block (legacy shape), e.g. { "header": "..." }
+      final String singleKey = raw.keys.first.toString();
+      final dynamic value = raw[singleKey];
+
+      switch (singleKey.toLowerCase()) {
         case 'header': {
           final text = (value ?? '').toString().trim();
           if (text.isEmpty) break;
@@ -208,7 +237,6 @@ List<Widget> _buildPromptChildren(List<dynamic> innerSpecs) {
         }
 
         case 'list': {
-          // prompt inner bulleted list
           final items = _asStringList(value);
           if (items.isEmpty) break;
           children
@@ -217,34 +245,9 @@ List<Widget> _buildPromptChildren(List<dynamic> innerSpecs) {
           break;
         }
 
-        case 'options': {
-          final List<String> options = _asStringList(value);
-          if (options.isEmpty) break;
-
-          for (int i = 0; i < options.length; i++) {
-            children.add(
-              PromptOptionButton(
-                label: options[i],
-                // alternate background: even = white, odd = light gray
-                isAlternate: i.isOdd,
-              ),
-            );
-            if (i != options.length - 1) {
-              children.add(const SizedBox(height: 15));
-            }
-          }
-
-          if (options.isNotEmpty) {
-            children.add(const SizedBox(height: 15));
-          }
-          break;
-        }
-
-
         default:
-          // Unknown inner type (e.g., "answer"): skip silently
           if (kDebugMode) {
-            debugPrint('[renderer] Skipping unsupported prompt block: $type');
+            debugPrint('[renderer] Skipping unsupported prompt child: $singleKey');
           }
           continue;
       }
@@ -261,7 +264,6 @@ List<Widget> _buildPromptChildren(List<dynamic> innerSpecs) {
 }
 
 /// Normalizes "type" / "component" and lowercases it.
-/// Returns empty string if not present/parsable.
 String _readType(Map<String, dynamic> block) {
   final dynamic raw = block['type'] ?? block['component'];
   final type = (raw ?? '').toString().trim().toLowerCase();
@@ -273,7 +275,7 @@ dynamic _readValue(Map<String, dynamic> block) {
   return block.containsKey('content') ? block['content'] : block['value'];
 }
 
-/// Safely converts a Firestore value to a List`<`String`>`.
+/// Safely converts a Firestore value to a List`<String>`.
 List<String> _asStringList(dynamic value) {
   if (value == null) return const <String>[];
 
@@ -287,7 +289,6 @@ List<String> _asStringList(dynamic value) {
   if (value is String && value.trim().isNotEmpty) {
     return [value.trim()];
   }
-
   return const <String>[];
 }
 
@@ -306,7 +307,6 @@ Widget _buildBulletedList(List<String> items) {
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Bullet dot (nudged to align with first text line)
             Container(
               width: bulletSize,
               height: bulletSize,
@@ -317,20 +317,12 @@ Widget _buildBulletedList(List<String> items) {
               ),
             ),
             const SizedBox(width: bulletGap),
-
-            // Use the SAME render path as paragraphs: RichText + TextSpan(ContentStyles.body)
             Expanded(
               child: RichText(
                 text: TextSpan(
-                  style: ContentStyles.body, // exact same style as SectionPageParagraph
+                  style: ContentStyles.body,
                   children: [TextSpan(text: items[i])],
                 ),
-                // (Optional) match any paragraph textHeightBehavior if you use one:
-                // textHeightBehavior: const TextHeightBehavior(
-                //   applyHeightToFirstAscent: false,
-                //   applyHeightToLastDescent: false,
-                // ),
-                // Soft-wrap by default; no explicit maxLines
               ),
             ),
           ],
@@ -340,7 +332,3 @@ Widget _buildBulletedList(List<String> items) {
     ],
   );
 }
-
-
-
-

@@ -6,6 +6,7 @@ import 'package:qubi_app/pages/learn/components/gradient_progress_bar.dart';
 import 'package:qubi_app/pages/learn/components/info_badge.dart';
 import 'package:qubi_app/pages/learn/models/renderer.dart';
 import 'package:qubi_app/pages/learn/bloc/chapter_data_store.dart';
+import 'package:qubi_app/user_bloc/stored_user_info.dart';
 
 /// A simplified vertical list of section modules for a chapter (no difficulty groups).
 /// Each tile shows:
@@ -42,26 +43,29 @@ class _ChapterContentSectionState extends State<ChapterContentSection> {
               item: widget.items[i],
               sectionIndexFallback: i + 1,
               onOpen: (chapter, content) async {
-                // Capture Navigator BEFORE any await to avoid using context across async gaps.
+                // Capture navigator BEFORE any await to avoid using context across async gaps.
                 final navigator = Navigator.of(context);
 
-                // If locked, ask for confirmation.
-                if (content.locked) {
-                  final proceed = await _confirmProceedDialog(context);
-                  if (proceed != true) return;
-                }
-
-                // Determine the section number (prefer model's number, else fallback by index).
+                // Determine actual section number
                 final int chapterNum = chapter.number;
                 final int sectionNum =
                     (content.number != 0) ? content.number : (widget.items.indexOf(content) + 1);
+
+                // Reactive lock value (string key: "chapter.section")
+                final String lockKey = '$chapterNum.$sectionNum';
+                final bool isLocked =
+                    StoredUserInfo.sectionLockedVN.value[lockKey] ?? content.locked;
+
+                if (isLocked) {
+                  final proceed = await _confirmProceedDialog(context);
+                  if (proceed != true) return;
+                }
 
                 // Preload all pages for this section into the router cache.
                 await ChapterDataStore.loadAllSectionPages(
                   chapterNum: chapterNum,
                   sectionNum: sectionNum,
                 );
-
                 if (!context.mounted) return;
 
                 // Resolve actual total pages (fallback to 1).
@@ -77,7 +81,7 @@ class _ChapterContentSectionState extends State<ChapterContentSection> {
                       chapter: chapter,
                       content: content,
                       totalPages: totalPages,
-                      // ⬇️ ASYNC buildPage: awaits the async renderer
+                      // ASYNC buildPage: awaits the async renderer
                       buildPage: ({
                         required Chapter chapter,
                         required ChapterContent section,
@@ -146,11 +150,10 @@ class _SectionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final clampedProgress = item.progress.clamp(0.0, 1.0);
-    final percentText = '${(clampedProgress * 100).round()}% progress';
-
     // Use item.number if provided; otherwise fall back to list index.
     final int sectionNumber = item.number == 0 ? sectionIndexFallback : item.number;
+    final int chapterNum = chapter.number;
+    final String key = '$chapterNum.$sectionNumber';
 
     return Material(
       color: Colors.white,
@@ -198,43 +201,68 @@ class _SectionTile extends StatelessWidget {
 
               const SizedBox(height: 8),
 
-              /// UNLOCKED: progress text + bar, then description (2 lines max)
-              /// LOCKED:   description (2 lines), then locked badge bottom-left
-              if (!item.locked) ...[
-                Text(
-                  percentText,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                GradientProgressBar(value: clampedProgress),
-                const SizedBox(height: 10),
-                Text(
-                  item.description,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontSize: 14, height: 1.4),
-                ),
-              ] else ...[
-                Text(
-                  item.description,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontSize: 14, height: 1.4),
-                ),
-                const SizedBox(height: 10),
-                // Orange locked badge bottom-left
-                InfoBadge(
-                  leading: const Icon(Icons.lock, size: 14, color: Colors.white),
-                  label: 'Locked',
-                  backgroundColor: _lockedOrange,
-                  labelColor: Colors.white,
-                  borderColor: Colors.transparent,
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                ),
-              ],
+              /// Reactive body depending on lock + progress notifiers
+              ValueListenableBuilder<Map<String, bool>>(
+                valueListenable: StoredUserInfo.sectionLockedVN,
+                builder: (_, lockedMap, __) {
+                  final bool isLocked = lockedMap[key] ?? item.locked;
+
+                  if (!isLocked) {
+                    // UNLOCKED: reactive progress + description
+                    return ValueListenableBuilder<Map<String, double>>(
+                      valueListenable: StoredUserInfo.sectionProgressVN,
+                      builder: (_, progressMap, __) {
+                        final double p = (progressMap[key] ?? 0.0).clamp(0.0, 1.0);
+                        final percentText = '${(p * 100).round()}% progress';
+
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              percentText,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            GradientProgressBar(value: p),
+                            const SizedBox(height: 10),
+                            Text(
+                              item.description,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(fontSize: 14, height: 1.4),
+                            ),
+                          ],
+                        );
+                      },
+                    );
+                  } else {
+                    // LOCKED: description + orange Locked badge (reactive)
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          item.description,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(fontSize: 14, height: 1.4),
+                        ),
+                        const SizedBox(height: 10),
+                        InfoBadge(
+                          leading: const Icon(Icons.lock, size: 14, color: Colors.white),
+                          label: 'Locked',
+                          backgroundColor: _lockedOrange,
+                          labelColor: Colors.white,
+                          borderColor: Colors.transparent,
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        ),
+                      ],
+                    );
+                  }
+                },
+              ),
             ],
           ),
         ),
