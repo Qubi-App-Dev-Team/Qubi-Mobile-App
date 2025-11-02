@@ -1,42 +1,50 @@
 import 'package:flutter/material.dart';
-import 'package:qubi_app/pages/learn/components/info_badge.dart';
-import 'package:qubi_app/pages/learn/components/gradient_progress_bar.dart';
-import 'package:qubi_app/pages/learn/models/chapter.dart';
-import 'package:qubi_app/pages/learn/pages/chapter_content_page.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-// Widget for all chapters page which shows information about an individual chapter (see class fields for more)
+import 'package:qubi_app/pages/learn/components/gradient_progress_bar.dart';
+import 'package:qubi_app/pages/learn/components/info_badge.dart';
+import 'package:qubi_app/pages/learn/models/chapter.dart';
+import 'package:qubi_app/pages/learn/pages/chapter_content_page.dart';
+import 'package:qubi_app/user_bloc/stored_user_info.dart';
+
+/// Card for a single chapter on the All Chapters page.
+/// Now fully reactive via StoredUserInfo ValueNotifiers:
+/// - locked state (chapterLockedVN)
+/// - chapter progress (chapterProgressVN)
+/// - skins unlocked count (chapterSkinsUnlockedVN)
 class ChapterInfo extends StatelessWidget {
-  final Chapter chapter;        // contains chapter number + title
+  final Chapter chapter; // number + title
 
   const ChapterInfo({
     super.key,
     required this.chapter,
   });
 
-  static const _lightBadge = Color(0xFFE6EEF8);   // skill & skins badge color
+  static const _lightBadge = Color(0xFFE6EEF8); // skill & skins badge color
   static const _lockedOrange = Color(0xFFF46A1E); // locked badge color
+  static const _sectionBlue = Color(0xff1B9CFC);
 
   @override
   Widget build(BuildContext context) {
-    final clampedProgress = chapter.progress.clamp(0.0, 1.0);
-    final percentText = '${(clampedProgress * 100).round()}% progress';
-
     return Material(
       color: Colors.white,
       borderRadius: BorderRadius.circular(12),
       elevation: 1,
-      clipBehavior: Clip.antiAlias, // ensures ripple stays within rounded corners
+      clipBehavior: Clip.antiAlias, // ripple stays within rounded corners
       child: InkWell(
         onTap: () async {
-          // ✅ Capture navigator before any await to avoid using context across async gaps.
+          // Capture navigator before any await (avoid context across async gaps)
           final navigator = Navigator.of(context);
 
-          if (chapter.locked) {
+          // Read the latest locked value from the notifier (fallback to false)
+          final locked = StoredUserInfo.chapterLockedVN.value[chapter.number] ?? false;
+
+          if (locked) {
             final proceed = await _confirmProceedDialog(context);
-            if (proceed != true) return; // stay on page if user taps No or dismisses
+            if (proceed != true) return;
           }
 
+          if (!navigator.mounted) return;
           navigator.push(
             MaterialPageRoute(
               builder: (_) => ChapterContentPage(chapter: chapter),
@@ -48,7 +56,7 @@ class ChapterInfo extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              /// Top row: Chapter number + (optional) Locked badge + more button
+              /// Top row: "Chapter 0x" + (reactive) Locked badge + more button
               Row(
                 children: [
                   Text(
@@ -56,20 +64,30 @@ class ChapterInfo extends StatelessWidget {
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
-                      color: Color(0xff1B9CFC),
+                      color: _sectionBlue,
                     ),
                   ),
-                  if (chapter.locked) ...[
-                    const SizedBox(width: 8),
-                    InfoBadge(
-                      leading: const Icon(Icons.lock, size: 14, color: Colors.white),
-                      label: 'Locked',
-                      backgroundColor: _lockedOrange,
-                      labelColor: Colors.white,
-                      borderColor: Colors.transparent,
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    ),
-                  ],
+                  const SizedBox(width: 8),
+                  // Reactive Locked badge
+                  ValueListenableBuilder<Map<int, bool>>(
+                    valueListenable: StoredUserInfo.chapterLockedVN,
+                    builder: (_, lockedMap, __) {
+                      final locked = lockedMap[chapter.number] ?? false;
+                      if (!locked) return const SizedBox.shrink();
+                      return InfoBadge(
+                        leading:
+                            const Icon(Icons.lock, size: 14, color: Colors.white),
+                        label: 'Locked',
+                        backgroundColor: _lockedOrange,
+                        labelColor: Colors.white,
+                        borderColor: Colors.transparent,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                      );
+                    },
+                  ),
                   const Spacer(),
                   IconButton(
                     visualDensity: VisualDensity.compact,
@@ -92,22 +110,42 @@ class ChapterInfo extends StatelessWidget {
 
               const SizedBox(height: 8),
 
-              /// progress section (only for unlocked chapters)
-              if (!chapter.locked) ...[
-                Text(
-                  percentText,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                GradientProgressBar(value: clampedProgress),
-                const SizedBox(height: 12),
-              ] else
-                const SizedBox(height: 6),
+              /// Progress (reactive) — only when unlocked
+              ValueListenableBuilder<Map<int, bool>>(
+                valueListenable: StoredUserInfo.chapterLockedVN,
+                builder: (_, lockedMap, __) {
+                  final locked = lockedMap[chapter.number] ?? false;
+                  if (locked) {
+                    // Keep vertical rhythm similar to your original
+                    return const SizedBox(height: 6);
+                  }
 
-              /// Bottom badges: Difficulty + Skins
+                  return ValueListenableBuilder<Map<int, double>>(
+                    valueListenable: StoredUserInfo.chapterProgressVN,
+                    builder: (_, progressMap, __) {
+                      final p = (progressMap[chapter.number] ?? 0.0).clamp(0.0, 1.0);
+                      final percentText = '${(p * 100).round()}% progress';
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            percentText,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          GradientProgressBar(value: p),
+                          const SizedBox(height: 12),
+                        ],
+                      );
+                    },
+                  );
+                },
+              ),
+
+              /// Bottom badges: Difficulty + (reactive) Skins
               Row(
                 children: [
                   InfoBadge(
@@ -115,7 +153,8 @@ class ChapterInfo extends StatelessWidget {
                       'assets/images/${chapter.difficulty.toLowerCase()}_icon.svg',
                       width: 18,
                       height: 18,
-                      errorBuilder: (c, e, s) => const Icon(Icons.error, size: 16),
+                      errorBuilder: (c, e, s) =>
+                          const Icon(Icons.error, size: 16),
                     ),
                     label: _capitalize(chapter.difficulty),
                     backgroundColor: _lightBadge,
@@ -123,18 +162,28 @@ class ChapterInfo extends StatelessWidget {
                     borderColor: Colors.transparent,
                   ),
                   const SizedBox(width: 10),
-                  InfoBadge(
-                    leading: SvgPicture.asset(
-                      'assets/images/skins_icon.svg',
-                      width: 18,
-                      height: 18,
-                      errorBuilder: (c, e, s) => const Icon(Icons.style, size: 16),
-                    ),
-                    label: 'Skins ${chapter.skinsUnlocked}/2',
-                    backgroundColor: _lightBadge,
-                    labelColor: Colors.black87,
-                    borderColor: Colors.transparent,
+
+                  // Reactive skins count
+                  ValueListenableBuilder<Map<int, int>>(
+                    valueListenable: StoredUserInfo.chapterSkinsUnlockedVN,
+                    builder: (_, skinsMap, __) {
+                      final count = skinsMap[chapter.number] ?? 0;
+                      return InfoBadge(
+                        leading: SvgPicture.asset(
+                          'assets/images/skins_icon.svg',
+                          width: 18,
+                          height: 18,
+                          errorBuilder: (c, e, s) =>
+                              const Icon(Icons.style, size: 16),
+                        ),
+                        label: 'Skins $count/2',
+                        backgroundColor: _lightBadge,
+                        labelColor: Colors.black87,
+                        borderColor: Colors.transparent,
+                      );
+                    },
                   ),
+
                   const Spacer(),
                 ],
               ),
@@ -145,12 +194,11 @@ class ChapterInfo extends StatelessWidget {
     );
   }
 
-  /// Shows a confirmation dialog when a locked chapter is tapped.
-  /// Returns true if the user chooses "Yes", false otherwise.
+  /// Locked confirmation dialog
   Future<bool?> _confirmProceedDialog(BuildContext context) {
     return showDialog<bool>(
       context: context,
-      barrierDismissible: false, // force an explicit choice
+      barrierDismissible: false,
       builder: (ctx) => AlertDialog(
         title: const Text('Proceed to locked chapter?'),
         content: const Text(
@@ -159,11 +207,11 @@ class ChapterInfo extends StatelessWidget {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false), // No
+            onPressed: () => Navigator.of(ctx).pop(false),
             child: const Text('No'),
           ),
           ElevatedButton(
-            onPressed: () => Navigator.of(ctx).pop(true), // Yes
+            onPressed: () => Navigator.of(ctx).pop(true),
             child: const Text('Yes'),
           ),
         ],
