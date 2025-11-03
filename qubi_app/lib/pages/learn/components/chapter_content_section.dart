@@ -53,8 +53,7 @@ class _ChapterContentSectionState extends State<ChapterContentSection> {
 
                 // Reactive lock value (string key: "chapter.section")
                 final String lockKey = '$chapterNum.$sectionNum';
-                final bool isLocked =
-                    StoredUserInfo.sectionLockedVN.value[lockKey] ?? content.locked;
+                final bool isLocked = StoredUserInfo.sectionLockedVN.value[lockKey] ?? true;
 
                 if (isLocked) {
                   final proceed = await _confirmProceedDialog(context);
@@ -93,11 +92,11 @@ class _ChapterContentSectionState extends State<ChapterContentSection> {
                           pageNumber: pageNumber,
                         );
                       },
-                      initialPage: 1,
+                      initialPage: StoredUserInfo.getLatestPage(chapterNum: chapterNum, sectionNum: sectionNum),
                     ),
                   ),
                 );
-                if (!isLocked) {await StoredUserInfo.setSectionLocked(chapterNum: chapterNum, locked: false, sectionNum: sectionNum);}
+                if (isLocked) {await StoredUserInfo.setSectionLocked(chapterNum: chapterNum, locked: false, sectionNum: sectionNum);}
               },
             ),
             if (i != widget.items.length - 1) const SizedBox(height: 12),
@@ -206,7 +205,7 @@ class _SectionTile extends StatelessWidget {
               ValueListenableBuilder<Map<String, bool>>(
                 valueListenable: StoredUserInfo.sectionLockedVN,
                 builder: (_, lockedMap, _) {
-                  final bool isLocked = lockedMap[key] ?? item.locked;
+                  final bool isLocked = lockedMap[key] ?? true;
 
                   if (!isLocked) {
                     // UNLOCKED: reactive progress + description

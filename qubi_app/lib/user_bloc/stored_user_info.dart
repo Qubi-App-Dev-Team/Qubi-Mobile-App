@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -9,7 +10,6 @@ import 'package:path_provider/path_provider.dart';
 import 'package:qubi_app/pages/learn/bloc/chapter_data_store.dart';
 
 class StoredUserInfo {
-
   static Map<String, dynamic> userData = <String, dynamic>{};
   static List<Map<String, dynamic>> progress = <Map<String, dynamic>>[];
   static DocumentReference? documentReference;
@@ -43,6 +43,7 @@ class StoredUserInfo {
       '$chapterNum.$sectionNum';
 
   static Future<void> initializeAccountData({required User? currUser}) async {
+    // Reset all in-memory state
     userData.clear();
     progress.clear();
     documentReference = null;
@@ -58,22 +59,57 @@ class StoredUserInfo {
 
     userID = currUser.uid;
     documentReference = FirebaseFirestore.instance.collection(folderName).doc(currUser.uid);
-    final docSnap = await documentReference?.get();
 
-    if (docSnap!.exists) {} 
+    final DocumentSnapshot? docSnap = await documentReference?.get();
+
+    if (docSnap != null && docSnap.exists) {
+      final Map<String, dynamic> firebaseDoc = (docSnap.data() as Map<String, dynamic>);
+      userFile = await _ensureLocalFile();
+      final current = await _readWholeFile(userFile!);
+
+      if (current == null || current.trim().isEmpty) {
+        debugPrint('Creating information for user that already exists');
+        userData = firebaseDoc;
+        userData['email'] = currUser.email;
+        progress = (userData['progress'] as List)
+                    .map((e) => Map<String, dynamic>.from(e as Map))
+                    .toList();
+      } 
+      else {
+        Map<String, dynamic> tempMap = jsonDecode(current)['userInfo'];
+        for (int i = 0; i < tempMap['progress'].length; i++){
+          tempMap['progress'][i]['locked'] = tempMap['progress'][i]['locked'] && firebaseDoc['progress'][i]['locked'];
+          tempMap['progress'][i]['skinsUnlocked'] = tempMap['progress'][i]['skinsUnlocked'].length > firebaseDoc['progress'][i]['skinsUnlocked'].length ? tempMap['progress'][i]['skinsUnlocked'] : firebaseDoc['progress'][i]['skinsUnlocked'];
+          for (int j = 0; j < tempMap['progress'][i]['sections'].length; j++){
+            tempMap['progress'][i]['sections'][j]['locked'] = tempMap['progress'][i]['sections'][j]['locked'] && firebaseDoc['progress'][i]['sections'][j]['locked'];
+            tempMap['progress'][i]['sections'][j]['latestPage'] = max(tempMap['progress'][i]['sections'][j]['latestPage'], firebaseDoc['progress'][i]['sections'][j]['latestPage']);
+          }
+        }
+        userData = tempMap;
+        progress = (userData['progress'] as List)
+                    .map((e) => Map<String, dynamic>.from(e as Map))
+                    .toList();
+        try {await documentReference?.set(userData);} 
+        catch (_) {}
+        userData['email'] = currUser.email;
+        if (kDebugMode) {
+            debugPrint('[StoredUserInfo] Loaded user data from existing local file.');
+          }
+      }
+      await _writeSnapshotToDisk();
+    } 
     else {
-      // Create default structure based on content shape
       final chapterSections = ChapterDataStore.sectionsPerChapter();
       int i = 1;
       for (final numSections in chapterSections) {
         final defaultProgress = <String, dynamic>{};
         defaultProgress['locked'] = i != 1; // only chapter 1 unlocked by default
-        defaultProgress['skinsUnlocked'] = <dynamic>[]; 
+        defaultProgress['skinsUnlocked'] = <dynamic>[];
         final defaultSectionProgress = <Map<String, dynamic>>[];
         for (int j = 1; j <= numSections; j++) {
           defaultSectionProgress.add({
             'latestPage': 0,
-            'locked': j != 1, 
+            'locked': j != 1, // only first section of first chapter unlocked
           });
         }
         defaultProgress['sections'] = defaultSectionProgress;
@@ -83,17 +119,14 @@ class StoredUserInfo {
 
       userData['progress'] = progress;
       userData['email'] = currUser.email;
-      userData['loggedIn'] = true;
 
       try {
         await documentReference?.set(userData);
       } catch (_) {}
+      userFile = await _ensureLocalFile();
+      await _writeSnapshotToDisk();
     }
 
-    userFile = await _ensureLocalFile();
-    await _writeSnapshotToDisk();
-
-    // Publish initial values to notifiers so UI can render immediately.
     _publishAllFromCurrent();
   }
 
@@ -131,12 +164,14 @@ class StoredUserInfo {
     return list.length;
   }
 
+  static int getLatestPage({required int chapterNum, required int sectionNum}){
+    return progress[chapterNum - 1]['sections'][sectionNum - 1]['latestPage'];
+  }
+
   // --------------------------
   // WRITE APIs (mutate + notify)
   // --------------------------
 
-  /// Update which page the user reached for a section.
-  /// Recomputes and publishes section & chapter progress.
   static Future<void> updateProgress({
     required int pageNum,
     required int sectionNum,
@@ -147,14 +182,19 @@ class StoredUserInfo {
 
     if (pageNum > latestPage) {
       section['latestPage'] = pageNum;
-      if (pageNum == ChapterDataStore.totalSectionPages(chapterNum: chapterNum, sectionNum: sectionNum)){
-        if (sectionNum == progress[chapterNum - 1]['sections'].length){
-          setChapterLocked(chapterNum: chapterNum + 1, locked: false);
-        }
-        else {
-          setSectionLocked(chapterNum: chapterNum, sectionNum: sectionNum + 1, locked: false);
+
+      // Auto-unlock next section/chapter when finishing a section
+      if (pageNum ==
+          ChapterDataStore.totalSectionPages(
+              chapterNum: chapterNum, sectionNum: sectionNum)) {
+        if (sectionNum == progress[chapterNum - 1]['sections'].length) {
+          await setChapterLocked(chapterNum: chapterNum + 1, locked: false);
+        } else {
+          await setSectionLocked(
+              chapterNum: chapterNum, sectionNum: sectionNum + 1, locked: false);
         }
       }
+
       // Persist (best-effort)
       try {
         await documentReference?.set(userData);
@@ -171,11 +211,13 @@ class StoredUserInfo {
     }
   }
 
-  /// Lock/unlock a chapter.
   static Future<void> setChapterLocked({
     required int chapterNum,
     required bool locked,
   }) async {
+    // Guard: ignore invalid chapter numbers
+    if (chapterNum <= 0 || chapterNum > progress.length) return;
+
     progress[chapterNum - 1]['locked'] = locked;
     try {
       await documentReference?.set(userData);
@@ -184,12 +226,18 @@ class StoredUserInfo {
     _publishChapterLocked(chapterNum: chapterNum);
   }
 
-  /// Lock/unlock a section.
   static Future<void> setSectionLocked({
     required int chapterNum,
     required int sectionNum,
     required bool locked,
   }) async {
+    if (chapterNum <= 0 ||
+        chapterNum > progress.length ||
+        sectionNum <= 0 ||
+        sectionNum > (progress[chapterNum - 1]['sections'] as List).length) {
+      return;
+    }
+
     progress[chapterNum - 1]['sections'][sectionNum - 1]['locked'] = locked;
     try {
       await documentReference?.set(userData);
@@ -198,23 +246,16 @@ class StoredUserInfo {
     _publishSectionLocked(chapterNum: chapterNum, sectionNum: sectionNum);
   }
 
-  /// Replace the set/list of skins unlocked for a chapter or just set the count.
-  /// If you track specific skin IDs, update that list in `userData` and call this
-  /// with the new count to notify the UI.
   static Future<void> setSkinsUnlockedCount({
     required int chapterNum,
     required int count,
   }) async {
-    // If you store IDs, adjust this to write the actual list, not just count.
     final list = (progress[chapterNum - 1]['skinsUnlocked'] as List);
-    if (list.length != count) {
-      // naive: resize list to match (or replace with IDs if you have them)
-      if (count >= 0) {
-        if (count > list.length) {
-          list.addAll(List.filled(count - list.length, 'placeholder'));
-        } else {
-          list.removeRange(count, list.length);
-        }
+    if (count >= 0) {
+      if (count > list.length) {
+        list.addAll(List.filled(count - list.length, 'placeholder'));
+      } else if (count < list.length) {
+        list.removeRange(count, list.length);
       }
     }
     try {
@@ -225,7 +266,6 @@ class StoredUserInfo {
   }
 
   static void _publishAllFromCurrent() {
-    // Build fresh maps and assign (assigning a NEW map triggers listeners)
     final chapterProgress = <int, double>{};
     final sectionProgress = <String, double>{};
     final chapterLocked = <int, bool>{};
@@ -311,7 +351,6 @@ class StoredUserInfo {
     chapterSkinsUnlockedVN.value = next;
   }
 
-
   static Future<File> _ensureLocalFile() async {
     final dir = await getApplicationDocumentsDirectory();
     final folder = Directory('${dir.path}/$folderName');
@@ -333,5 +372,10 @@ class StoredUserInfo {
     if (kDebugMode) {
       debugPrint('[StoredUserInfo] Wrote snapshot → ${userFile?.path}');
     }
+  }
+
+  static Future<String?> _readWholeFile(File file) async {
+    try {return await file.readAsString();} 
+    catch (_) {return null;}
   }
 }

@@ -49,7 +49,7 @@ class ChapterInfo extends StatelessWidget {
               builder: (_) => ChapterContentPage(chapter: chapter),
             ),
           );
-          if (!locked) {await StoredUserInfo.setChapterLocked(chapterNum: chapter.number, locked: false);}
+          if (locked) {await StoredUserInfo.setChapterLocked(chapterNum: chapter.number, locked: false);}
         },
         child: Padding(
           padding: const EdgeInsets.all(16),

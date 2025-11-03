@@ -15,7 +15,7 @@ Future<void> main() async {
     _ => dotenv.env['GOOGLE_CLIENT_ID'] ?? '', // Web or others
   };
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform,);
-  ChapterDataStore.refreshChaptersCache(includeDocId: false);
+  await ChapterDataStore.refreshChaptersCache(includeDocId: false);
   runApp(MyApp(clientId: clientId));
 }
 
