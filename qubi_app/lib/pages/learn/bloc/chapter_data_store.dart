@@ -9,8 +9,6 @@ import 'package:qubi_app/pages/learn/models/chapter.dart';
 import 'package:qubi_app/pages/learn/models/chapter_content.dart';
 import 'package:qubi_app/pages/learn/models/section_routes.dart';
 
-import 'package:qubi_app/user_bloc/stored_user_info.dart';
-
 /// Central data store for 'chapters'.
 /// - Static in-memory cache so all imports share the latest data
 /// - Persists to a local JSON file for offline use
@@ -118,7 +116,6 @@ class ChapterDataStore {
         ChapterContent(
           title: sectionData['title'],
           description: sectionData['description'],
-          locked: StoredUserInfo.isSectionLocked(chapterNum: chapterNum, sectionNum: i),
           number: i 
         )
       );
