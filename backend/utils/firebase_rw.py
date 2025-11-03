@@ -22,6 +22,30 @@ db = firestore.client()
 
 processed_docs = set()
 
+def add_results_new(run_request_id, user_id, circuit_id, elapsed_time, shots, results):
+    """
+    Add results to the 'run_results' collection.
+    Uses the same doc ID as the run_request.
+    """
+    runs_ref = db.collection('run_results').document(run_request_id)
+    
+    data = {
+        "success": True,
+        "run_request_id": run_request_id,
+        "circuit_id": circuit_id,
+        "user_id": user_id,
+        "quantum_computer": results.backend_name,
+        "histogram_counts": results.get_counts(),
+        "histogram_probabilities": results.get_probabilities(),
+        "shots": shots,
+        "elapsed_time_s": elapsed_time,
+        "created_at": firestore.SERVER_TIMESTAMP
+    }
+
+    runs_ref.set(data)
+    return run_request_id
+
+
 def add_results(doc_id, elapsed_time, results):
     """
     Add results to the 'runs' collection with a random document ID.

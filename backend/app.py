@@ -253,7 +253,7 @@ async def execute_shake_endpoint(request: ExecuteShakeRequest):
     # 4. Call joey's function to do a run 
     run_id, elapsed_time, res = send_circuit(hash_id, quantum_computer)
 
-    # Convert IonQResult to plain dictionary
+    # Convert result to plain dictionary
     res_dict = res.to_dict()
 
     data = res_dict["results"][0]["data"]
@@ -279,8 +279,6 @@ async def execute_shake_endpoint(request: ExecuteShakeRequest):
 }
 
 
-
-
 '''
 {
   "user_id": "dummy_id",
@@ -298,6 +296,6 @@ async def execute_shake_endpoint(request: ExecuteShakeRequest):
     }
   },
   "quantum_computer": "ionq_simulator",
-  "circuit_name": "Bell Shake 1"
+  "circuit_name": "Test Circuit"
 }
 '''
