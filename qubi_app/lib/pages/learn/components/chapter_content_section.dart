@@ -75,7 +75,7 @@ class _ChapterContentSectionState extends State<ChapterContentSection> {
                 );
                 if (totalPages < 1) totalPages = 1;
 
-                navigator.push(
+                await navigator.push(
                   MaterialPageRoute(
                     builder: (_) => SectionContentPage(
                       chapter: chapter,
@@ -97,6 +97,7 @@ class _ChapterContentSectionState extends State<ChapterContentSection> {
                     ),
                   ),
                 );
+                if (!isLocked) {await StoredUserInfo.setSectionLocked(chapterNum: chapterNum, locked: false, sectionNum: sectionNum);}
               },
             ),
             if (i != widget.items.length - 1) const SizedBox(height: 12),
@@ -204,14 +205,14 @@ class _SectionTile extends StatelessWidget {
               /// Reactive body depending on lock + progress notifiers
               ValueListenableBuilder<Map<String, bool>>(
                 valueListenable: StoredUserInfo.sectionLockedVN,
-                builder: (_, lockedMap, __) {
+                builder: (_, lockedMap, _) {
                   final bool isLocked = lockedMap[key] ?? item.locked;
 
                   if (!isLocked) {
                     // UNLOCKED: reactive progress + description
                     return ValueListenableBuilder<Map<String, double>>(
                       valueListenable: StoredUserInfo.sectionProgressVN,
-                      builder: (_, progressMap, __) {
+                      builder: (_, progressMap, _) {
                         final double p = (progressMap[key] ?? 0.0).clamp(0.0, 1.0);
                         final percentText = '${(p * 100).round()}% progress';
 

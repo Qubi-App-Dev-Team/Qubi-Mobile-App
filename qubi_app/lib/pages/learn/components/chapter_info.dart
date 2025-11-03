@@ -37,19 +37,19 @@ class ChapterInfo extends StatelessWidget {
           final navigator = Navigator.of(context);
 
           // Read the latest locked value from the notifier (fallback to false)
-          final locked = StoredUserInfo.chapterLockedVN.value[chapter.number] ?? false;
+          final locked = StoredUserInfo.chapterLockedVN.value[chapter.number] ?? true;
 
           if (locked) {
             final proceed = await _confirmProceedDialog(context);
             if (proceed != true) return;
           }
-
           if (!navigator.mounted) return;
-          navigator.push(
+          await navigator.push(
             MaterialPageRoute(
               builder: (_) => ChapterContentPage(chapter: chapter),
             ),
           );
+          if (!locked) {await StoredUserInfo.setChapterLocked(chapterNum: chapter.number, locked: false);}
         },
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -71,7 +71,7 @@ class ChapterInfo extends StatelessWidget {
                   // Reactive Locked badge
                   ValueListenableBuilder<Map<int, bool>>(
                     valueListenable: StoredUserInfo.chapterLockedVN,
-                    builder: (_, lockedMap, __) {
+                    builder: (_, lockedMap, _) {
                       final locked = lockedMap[chapter.number] ?? false;
                       if (!locked) return const SizedBox.shrink();
                       return InfoBadge(
@@ -113,7 +113,7 @@ class ChapterInfo extends StatelessWidget {
               /// Progress (reactive) — only when unlocked
               ValueListenableBuilder<Map<int, bool>>(
                 valueListenable: StoredUserInfo.chapterLockedVN,
-                builder: (_, lockedMap, __) {
+                builder: (_, lockedMap, _) {
                   final locked = lockedMap[chapter.number] ?? false;
                   if (locked) {
                     // Keep vertical rhythm similar to your original
@@ -122,7 +122,7 @@ class ChapterInfo extends StatelessWidget {
 
                   return ValueListenableBuilder<Map<int, double>>(
                     valueListenable: StoredUserInfo.chapterProgressVN,
-                    builder: (_, progressMap, __) {
+                    builder: (_, progressMap, _) {
                       final p = (progressMap[chapter.number] ?? 0.0).clamp(0.0, 1.0);
                       final percentText = '${(p * 100).round()}% progress';
                       return Column(
@@ -166,7 +166,7 @@ class ChapterInfo extends StatelessWidget {
                   // Reactive skins count
                   ValueListenableBuilder<Map<int, int>>(
                     valueListenable: StoredUserInfo.chapterSkinsUnlockedVN,
-                    builder: (_, skinsMap, __) {
+                    builder: (_, skinsMap, _) {
                       final count = skinsMap[chapter.number] ?? 0;
                       return InfoBadge(
                         leading: SvgPicture.asset(

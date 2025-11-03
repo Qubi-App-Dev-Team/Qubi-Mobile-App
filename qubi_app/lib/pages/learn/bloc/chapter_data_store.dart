@@ -96,7 +96,7 @@ class ChapterDataStore {
   }
 
   static Future<List<Chapter>> loadAllChapters() async{
-    List<Chapter> chapterModels = [];;
+    List<Chapter> chapterModels = [];
     for (final data in chapters){
       chapterModels.add(
         Chapter(

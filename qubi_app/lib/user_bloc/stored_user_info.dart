@@ -12,7 +12,7 @@ class StoredUserInfo {
 
   static Map<String, dynamic> userData = <String, dynamic>{};
   static List<Map<String, dynamic>> progress = <Map<String, dynamic>>[];
-  static dynamic documentSnapshot;
+  static DocumentReference? documentReference;
   static File? userFile;
 
   static String userID = '';
@@ -45,7 +45,7 @@ class StoredUserInfo {
   static Future<void> initializeAccountData({required User? currUser}) async {
     userData.clear();
     progress.clear();
-    documentSnapshot = null;
+    documentReference = null;
     userID = '';
 
     chapterProgressVN.value = {};
@@ -57,11 +57,10 @@ class StoredUserInfo {
     if (currUser == null) return;
 
     userID = currUser.uid;
-    final docRef =
-        FirebaseFirestore.instance.collection(folderName).doc(currUser.uid);
-    documentSnapshot = await docRef.get();
+    documentReference = FirebaseFirestore.instance.collection(folderName).doc(currUser.uid);
+    final docSnap = await documentReference?.get();
 
-    if (documentSnapshot.exists) {} 
+    if (docSnap!.exists) {} 
     else {
       // Create default structure based on content shape
       final chapterSections = ChapterDataStore.sectionsPerChapter();
@@ -87,7 +86,7 @@ class StoredUserInfo {
       userData['loggedIn'] = true;
 
       try {
-        await docRef.set(userData);
+        await documentReference?.set(userData);
       } catch (_) {}
     }
 
@@ -148,10 +147,17 @@ class StoredUserInfo {
 
     if (pageNum > latestPage) {
       section['latestPage'] = pageNum;
-
+      if (pageNum == ChapterDataStore.totalSectionPages(chapterNum: chapterNum, sectionNum: sectionNum)){
+        if (sectionNum == progress[chapterNum - 1]['sections'].length){
+          setChapterLocked(chapterNum: chapterNum + 1, locked: false);
+        }
+        else {
+          setSectionLocked(chapterNum: chapterNum, sectionNum: sectionNum + 1, locked: false);
+        }
+      }
       // Persist (best-effort)
       try {
-        await documentSnapshot.set(userData);
+        await documentReference?.set(userData);
       } catch (e) {
         if (kDebugMode) {
           debugPrint('Firestore write failed, persisting locally. $e');
@@ -172,7 +178,7 @@ class StoredUserInfo {
   }) async {
     progress[chapterNum - 1]['locked'] = locked;
     try {
-      await documentSnapshot.set(userData);
+      await documentReference?.set(userData);
     } catch (_) {}
     await _writeSnapshotToDisk();
     _publishChapterLocked(chapterNum: chapterNum);
@@ -186,7 +192,7 @@ class StoredUserInfo {
   }) async {
     progress[chapterNum - 1]['sections'][sectionNum - 1]['locked'] = locked;
     try {
-      await documentSnapshot.set(userData);
+      await documentReference?.set(userData);
     } catch (_) {}
     await _writeSnapshotToDisk();
     _publishSectionLocked(chapterNum: chapterNum, sectionNum: sectionNum);
@@ -212,7 +218,7 @@ class StoredUserInfo {
       }
     }
     try {
-      await documentSnapshot.set(userData);
+      await documentReference?.set(userData);
     } catch (_) {}
     await _writeSnapshotToDisk();
     _publishChapterSkins(chapterNum: chapterNum);
