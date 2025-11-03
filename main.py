@@ -42,7 +42,7 @@ def send_circuit(
         return None
 
     print(f"Saving results to Firebase...")
-    run_id = add_results_new(run_request_id, user_id, circuit_id, elapsed_time, res)
+    run_id = add_results_new(run_request_id, user_id, circuit_id, elapsed_time, shots, res)
     print(f"\nCompleted successfully in {elapsed_time:.2f} seconds")
 
     return run_id

@@ -22,7 +22,7 @@ db = firestore.client()
 
 processed_docs = set()
 
-def add_results_new(run_request_id, user_id, circuit_id, elapsed_time, results):
+def add_results_new(run_request_id, user_id, circuit_id, elapsed_time, shots, results):
     """
     Add results to the 'runs_results' collection.
     """
@@ -35,7 +35,7 @@ def add_results_new(run_request_id, user_id, circuit_id, elapsed_time, results):
         'quantum_computer': results.backend_name,
         'histogram_counts': results.get_counts(),
         'histogram_probabilities': results.get_probabilities(),
-        'shots': results.shots,
+        'shots': shots,
         'elapsed_time': elapsed_time,
         'run_datetime': firestore.SERVER_TIMESTAMP
     }
