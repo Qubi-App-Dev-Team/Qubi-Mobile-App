@@ -74,6 +74,7 @@ class StoredUserInfo {
         progress = (userData['progress'] as List)
                     .map((e) => Map<String, dynamic>.from(e as Map))
                     .toList();
+        userData['progress'] = progress;
       } 
       else {
         Map<String, dynamic> tempMap = jsonDecode(current)['userInfo'];
@@ -89,6 +90,7 @@ class StoredUserInfo {
         progress = (userData['progress'] as List)
                     .map((e) => Map<String, dynamic>.from(e as Map))
                     .toList();
+        userData['progress'] = progress;
         try {await documentReference?.set(userData);} 
         catch (_) {}
         userData['email'] = currUser.email;
@@ -219,9 +221,8 @@ class StoredUserInfo {
     if (chapterNum <= 0 || chapterNum > progress.length) return;
 
     progress[chapterNum - 1]['locked'] = locked;
-    try {
-      await documentReference?.set(userData);
-    } catch (_) {}
+    try {await documentReference?.set(userData);} 
+    catch (_) {}
     await _writeSnapshotToDisk();
     _publishChapterLocked(chapterNum: chapterNum);
   }
