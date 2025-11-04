@@ -4,6 +4,7 @@ import 'package:qubi_app/pages/profile/models/execution.dart';
 import 'package:qubi_app/pages/home/executor.dart';
 import 'package:qubi_app/pages/story/story_page.dart';
 import 'package:qubi_app/pages/home/run.dart';
+import 'package:qubi_app/pages/home/components/loading_dialog.dart'; // 👈 add this import
 
 class CircuitSection extends StatelessWidget {
   const CircuitSection({super.key});
@@ -73,7 +74,6 @@ class CircuitSection extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.start,
                 children: [
-                  // "Read Report" → RunPage (with full model)
                   GestureDetector(
                     onTap: () {
                       Navigator.push(
@@ -86,7 +86,6 @@ class CircuitSection extends StatelessWidget {
                     child: buildGradientButton("Read Report", true),
                   ),
                   const SizedBox(width: 12),
-                  // "Skip to Story"
                   GestureDetector(
                     onTap: () {
                       Navigator.push(
@@ -169,6 +168,8 @@ class CircuitSection extends StatelessWidget {
                 style: TextStyle(color: Colors.white, fontSize: 16),
               ),
               const SizedBox(height: 6),
+
+              // Executor selector
               GestureDetector(
                 onTap: () {
                   Navigator.push(
@@ -215,15 +216,31 @@ class CircuitSection extends StatelessWidget {
 
               const SizedBox(height: 10),
 
-              // 🔸 Run Pending Circuit Button → RunPage (same model)
+              // 🔸 Run Pending Circuit Button → shows loading then navigates
               GestureDetector(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => RunPage(execution: executionData[1]),
-                    ),
+                onTap: () async {
+                  // show loading dialog
+                  showDialog(
+                    context: context,
+                    barrierDismissible: false,
+                    builder: (_) => const LoadingDialog(),
                   );
+
+                  // wait for 5 seconds
+                  await Future.delayed(const Duration(seconds: 5));
+
+                  // close loading
+                  if (context.mounted) Navigator.of(context).pop();
+
+                  // navigate to RunPage
+                  if (context.mounted) {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => RunPage(execution: executionData[1]),
+                      ),
+                    );
+                  }
                 },
                 child: Container(
                   padding: const EdgeInsets.symmetric(
