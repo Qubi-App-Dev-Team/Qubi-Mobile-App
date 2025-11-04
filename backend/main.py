@@ -1,5 +1,4 @@
 # main.py
-# Qubi MVP API with ONLY:
 #   - POST /make_request
 #   - GET  /fetch_results
 #   - GET  /fetch_run_history
@@ -8,63 +7,39 @@ import json
 import hashlib
 from typing import Any, Dict, Optional, List
 from datetime import datetime, timezone
-
 import firebase_admin
 from firebase_admin import credentials, firestore
 from fastapi import FastAPI, HTTPException, BackgroundTasks
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 from dotenv import load_dotenv
-
 from google.cloud.firestore_v1 import DocumentSnapshot
 from google.cloud.firestore_v1._helpers import DatetimeWithNanoseconds
 from datetime import datetime
-
-
-
-# Expected: send_circuit(circuit_id: str, quantum_computer: str) -> (run_id, elapsed_time_seconds, res_object)
+# send_circuit()
 from quantum import send_circuit
-
-
-# ------------------------------------------------------------------------------
-# App & Firestore init
-# ------------------------------------------------------------------------------
-load_dotenv()
-
-firebase_creds = os.getenv("FIREBASE_CREDENTIALS")
-if not firebase_creds:
-    raise RuntimeError("FIREBASE_CREDENTIALS env var is missing.")
-
-firebase_creds_dict = json.loads(firebase_creds)
-cred = credentials.Certificate(firebase_creds_dict)
-
-if not firebase_admin._apps:
-    firebase_admin.initialize_app(cred)
-
-db = firestore.client()
-app = FastAPI(title="Qubi MVP API", version="0.1.0")
-
 
 # Models
 class MakeRequestDTO(BaseModel):
     user_id: str
     shots: int = Field(gt=0)
     circuit: Dict[str, Any]               
-    quantum_computer: str                 
+    quantum_computer: str   
 
+# App & Firestore init
+load_dotenv()
+firebase_creds = os.getenv("FIREBASE_CREDENTIALS")
+if not firebase_creds:
+    raise RuntimeError("FIREBASE_CREDENTIALS env var is missing.")
+firebase_creds_dict = json.loads(firebase_creds)
+cred = credentials.Certificate(firebase_creds_dict)
+if not firebase_admin._apps:
+    firebase_admin.initialize_app(cred)
+db = firestore.client()
+app = FastAPI(title="Qubi MVP API", version="0.1.0")
 
+              
 # Helpers
-def serialize_firestore_data(data):
-    """Recursively converts Firestore timestamps to ISO strings."""
-    if isinstance(data, dict):
-        return {k: serialize_firestore_data(v) for k, v in data.items()}
-    elif isinstance(data, list):
-        return [serialize_firestore_data(i) for i in data]
-    elif isinstance(data, DatetimeWithNanoseconds):
-        return data.isoformat()
-    else:
-        return data
-    
 def serialize_value(value):
     """Recursively converts Firestore timestamps and nested objects into JSON-safe types."""
     if isinstance(value, DatetimeWithNanoseconds):
@@ -92,16 +67,14 @@ def insert_circuit(circuit_dict: Dict[str, Any]) -> str:
     return circuit_id
 
 
-# ------------------------------------------------------------------------------
 # Endpoints
-# ------------------------------------------------------------------------------
 
 @app.post("/make_request")
 async def make_request(dto: MakeRequestDTO, bg: BackgroundTasks):
     """
-    1) Insert circuit into circuits/{circuit_id} if absent 
-    2) Create run_requests/{run_request_id}
-    3) Enqueue background worker -> writes run_results/{run_request_id}
+    1) Insert circuit into circuits/{circuit_id}
+    2) Create run_requests/{run_request_id} and write to db
+    3) Asynchronously call send_circuit function
     4) Return run_request_id
     """
     try:
@@ -135,19 +108,23 @@ async def make_request(dto: MakeRequestDTO, bg: BackgroundTasks):
 
 @app.get("/fetch_results")
 async def fetch_results(run_request_id: str):
-    # Check if result exists
+    '''
+    Fetch results of a request with id run_request_id
+    '''
+
+    # If result completed 
     result_snap = db.collection("run_results").document(run_request_id).get()
     if result_snap.exists:
-        result = serialize_firestore_data(result_snap.to_dict())
+        result = serialize_value(result_snap.to_dict())
         return JSONResponse(
             status_code=200,
             content={"status": "completed", "run_result": result}
         )
 
-    # Check if request exists but result not ready
+    # If request created but result not completed yet 
     request_snap = db.collection("run_requests").document(run_request_id).get()
     if request_snap.exists:
-        request_data = serialize_firestore_data(request_snap.to_dict())
+        request_data = serialize_value(request_snap.to_dict())
         qc = request_data.get("quantum_computer")
         shots = request_data.get("shots")
         return JSONResponse(
@@ -205,5 +182,34 @@ async def fetch_run_history(user_id: str, limit: int = 20):
     "num_clbits": 2
   }
 }
+
+{
+  "status": "waiting for quantum computer",
+  "quantum_computer": "ionq_simulator",
+  "shots": 1000
+}
+
+
+{
+  "status": "completed",
+  "run_result": {
+    "histogram_probabilities": {
+      "11": 0.5,
+      "00": 0.5
+    },
+    "created_at": "2025-11-03T23:48:59.895000+00:00",
+    "histogram_counts": {
+      "11": 523,
+      "00": 477
+    },
+    "quantum_computer": "ionq_simulator",
+    "shots": 1000,
+    "elapsed_time_s": 6.612540625035763,
+    "user_id": "user_01",
+    "success": true,
+    "circuit_id": "6d8fc29c2a6e5d38fa982cb418039810fcce60f77c887f0aeef1fc1856236573"
+  }
+}
+
 
 '''

@@ -22,7 +22,7 @@ db = firestore.client()
 
 processed_docs = set()
 
-def add_results_new(run_request_id, user_id, circuit_id, elapsed_time, shots, results):
+def add_results(run_request_id, user_id, circuit_id, elapsed_time, shots, results):
     """
     Add results to the 'run_results' collection.
     Uses the same doc ID as the run_request.
@@ -31,7 +31,6 @@ def add_results_new(run_request_id, user_id, circuit_id, elapsed_time, shots, re
     
     data = {
         "success": True,
-        "run_request_id": run_request_id,
         "circuit_id": circuit_id,
         "user_id": user_id,
         "quantum_computer": results.backend_name,
@@ -44,97 +43,3 @@ def add_results_new(run_request_id, user_id, circuit_id, elapsed_time, shots, re
 
     runs_ref.set(data)
     return run_request_id
-
-
-def add_results(doc_id, elapsed_time, results):
-    """
-    Add results to the 'runs' collection with a random document ID.
-
-    Args:
-        doc_id: The circuit document ID that was executed
-        results: The results from the quantum execution (Qiskit Result object)
-    """
-    runs_ref = db.collection('runs')
-
-    # Create a new document with auto-generated ID
-    new_run = runs_ref.document()
-
-    # Extract only the backend name and counts for Firestore compatibility
-    data = {
-        'circuit_id': doc_id,
-        'quantum_computer': results.backend_name,
-        'histogram': results.get_counts(),
-        'total_runtime': round(elapsed_time, 2),
-        'run_datetime': firestore.SERVER_TIMESTAMP
-    }
-
-    # Set the data
-    new_run.set(data)
-
-    print(f"Results added to 'runs' collection with ID: {new_run.id}")
-    return new_run.id
-
-def get_circuit_by_id(circuit_id):
-    """
-    Get a circuit document by its ID.
-
-    Args:
-        circuit_id: The ID of the circuit document to retrieve
-
-    Returns:
-        A tuple of (gates, num_qubits, num_clbits) or None if not found
-    """
-    doc_ref = db.collection('circuits').document(circuit_id)
-    doc = doc_ref.get()
-
-    if not doc.exists:
-        print(f"Error: Circuit with ID '{circuit_id}' not found")
-        return None
-
-    data = doc.to_dict()
-    gates = data.get('gates')
-    num_qubits = data.get('num_qubits')
-    num_clbits = data.get('num_clbits')
-
-    if gates is None or num_qubits is None or num_clbits is None:
-        print(f"Error: Circuit '{circuit_id}' is missing required fields")
-        return None
-
-    return (gates, num_qubits, num_clbits)
-
-def listen_for_circuits(callback):
-    """
-    Listen for new circuit documents and call the callback function when one is added.
-
-    Args:
-        callback: Function that takes (doc_id, gates, num_qubits, num_clbits)
-    """
-    def on_snapshot(_col_snapshot, changes, _read_time):
-        for change in changes:
-            if change.type.name == 'ADDED':
-                doc = change.document
-                doc_id = doc.id
-
-                if doc_id not in processed_docs:
-                    processed_docs.add(doc_id)
-
-                    data = doc.to_dict()
-                    gates = data.get('gates')
-                    num_qubits = data.get('num_qubits')
-                    num_clbits = data.get('num_clbits')
-
-                    if gates is not None and num_qubits is not None and num_clbits is not None:
-                        callback(doc_id, gates, num_qubits, num_clbits)
-
-    print("Starting Firebase listener for 'circuits' collection...")
-    print("Waiting for new documents...\n")
-
-    col_ref = db.collection('circuits')
-    col_watch = col_ref.on_snapshot(on_snapshot)
-
-    try:
-        while True:
-            time.sleep(1)
-    except KeyboardInterrupt:
-        print("\nStopping listener...")
-        col_watch.unsubscribe()
