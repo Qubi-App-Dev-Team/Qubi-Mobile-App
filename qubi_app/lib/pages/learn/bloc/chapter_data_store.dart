@@ -100,10 +100,7 @@ class ChapterDataStore {
         Chapter(
           number: data['number'],
           title: data['title'],
-          progress: 0,
           difficulty: data['diff'],
-          locked: false,
-          skinsUnlocked: 0
         )
       );
     }
@@ -119,7 +116,6 @@ class ChapterDataStore {
         ChapterContent(
           title: sectionData['title'],
           description: sectionData['description'],
-          locked: false,
           number: i 
         )
       );
@@ -129,7 +125,7 @@ class ChapterDataStore {
     return finalSections;
   }
 
-  static Future<void> loadAllSectionPages({required int chapterNum, required int sectionNum,}) async {
+  static Future<void> loadAllSectionPages({required int chapterNum, required int sectionNum}) async {
     final List<dynamic> relevantPages = chapters[chapterNum - 1]['sections'][sectionNum - 1]['pages'];
     int pageNum = 1;
     for (final page in relevantPages) {
@@ -143,6 +139,14 @@ class ChapterDataStore {
 
   static int totalSectionPages({required int chapterNum, required int sectionNum}){
     return chapters[chapterNum - 1]['sections'][sectionNum-1]['pages'].length;
+  }
+
+  static List<int> sectionsPerChapter(){
+    List<int> chapterPages = [];
+    for (final chapterData in chapters){
+      chapterPages.add(chapterData['sections'].length);
+    }
+    return chapterPages;
   }
 
 
