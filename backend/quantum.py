@@ -58,17 +58,20 @@ def send_circuit(run_request_id: str, user_id: str, circuit_id: str, circuit: di
         return None
     
     gates, num_qubits, num_clbits = circuit_data
-    # gates, num_qubits, num_clbits = circuit
     print(f"Creating circuit...")
     qc = create_circuit(gates, num_qubits, num_clbits)
+    
     # Create results folder if nonexistent
     os.makedirs("results", exist_ok=True)
     print(f"Running circuit on {quantum_computer}...")
+    
     start_time = time.perf_counter()
     if quantum_computer == 'ionq_simulator':
         res = get_ionq_results(qc, shots=shots, backend_name=quantum_computer, create_plot=True, save_plot=f"results/histogram_ionq{circuit_id}.png")
-    else:
+    elif quantum_computer == 'ibm_simulator':
         res = get_ibm_results(qc, shots=shots, backend_name="simulator_stabilizer", create_plot=True, save_plot=f"results/histogram_ibm{circuit_id}.png")
+    else:
+        print("[ERROR] quantum computer name invalid: either use ionq_simulator or ibm_simulator")
     elapsed_time = time.perf_counter() - start_time
     
     if res is None:
