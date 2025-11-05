@@ -22,24 +22,21 @@ db = firestore.client()
 
 processed_docs = set()
 
-def add_results_new(run_request_id, user_id, circuit_id, elapsed_time, shots, results):
+from collections import Counter
+import numpy as np
+
+def add_results_new(results):
     """
     Add results to the 'runs_results' collection.
     """
     runs_ref = db.collection('runs_results')
     new_run = runs_ref.document()
-    data = {
-        'circuit_id': circuit_id,
-        'run_request_id': run_request_id,
-        'user_id': user_id,
-        'quantum_computer': results.backend_name,
-        'histogram_counts': results.get_counts(),
-        'histogram_probabilities': results.get_probabilities(),
-        'shots': shots,
-        'elapsed_time': elapsed_time,
+
+    results.update({
         'run_datetime': firestore.SERVER_TIMESTAMP
-    }
-    new_run.set(data)
+    })
+
+    new_run.set(results)
     return new_run.id
 
 def add_results(doc_id, elapsed_time, results):
