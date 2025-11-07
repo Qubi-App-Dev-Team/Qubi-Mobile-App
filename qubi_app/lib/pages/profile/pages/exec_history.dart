@@ -20,30 +20,33 @@ class _ExecHistoryPageState extends State<ExecHistoryPage> {
   // ----------------------------------------------
   final List<Execution> allExecutions = [
     Execution(
-      message: true,
-      circuitId:
-          "abe6d955a212c337fa16498d5a378782330be5dc65e1bbc404a41f87383f3119",
-      runId: "Qv6DySvo3mjfiQLHkf8B",
-      quantumComputer: "IonQ",
-      histogramCounts: {"00": 490, "11": 510},
-      histogramProbabilities: {"00": 0.5, "11": 0.5},
-      time: 6.535945208001067,
-      shots: 1000,
-    ),
-    Execution(
-      message: true,
-      circuitId: "xyzzza11",
-      runId: "A12SDd891",
-      quantumComputer: "IBM",
-      histogramCounts: {"00": 563, "01": 242, "10": 193, "11": 437},
+      success: true,
+      circuitId: 'test_circuit_001',
+      quantumComputer: 'IBM',
+      histogramCounts: {'00': 563, '01': 242, '10': 193, '11': 437},
       histogramProbabilities: {
-        "00": 0.563,
-        "01": 0.242,
-        "10": 0.193,
-        "11": 0.437,
+        '00': 0.563,
+        '01': 0.242,
+        '10': 0.193,
+        '11': 0.437,
       },
       time: 9.43,
       shots: 1000,
+      createdAt: '2025-11-06T00:00:00Z',
+      status: 'completed',
+      userId: 'demo_user',
+    ),
+    Execution(
+      success: false,
+      circuitId: 'test_circuit_002',
+      quantumComputer: 'IonQ',
+      histogramCounts: {},
+      histogramProbabilities: {},
+      time: 0.0,
+      shots: 0,
+      createdAt: '2025-11-05T00:00:00Z',
+      status: 'failed',
+      userId: 'demo_user',
     ),
   ];
 

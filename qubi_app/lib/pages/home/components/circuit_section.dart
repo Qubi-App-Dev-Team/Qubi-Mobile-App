@@ -4,309 +4,292 @@ import 'package:qubi_app/pages/profile/models/execution.dart';
 import 'package:qubi_app/pages/home/executor.dart';
 import 'package:qubi_app/pages/story/story_page.dart';
 import 'package:qubi_app/pages/home/run.dart';
-import 'package:qubi_app/pages/home/components/loading_dialog.dart'; // 👈 add this import
+import 'package:qubi_app/pages/home/components/loading_dialog.dart';
+import 'package:qubi_app/services/quantum_api.dart';
 
 class CircuitSection extends StatelessWidget {
   const CircuitSection({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // Sample executions — replace later with live backend data.
-    final List<Execution> executionData = [
-      Execution(
-        message: true,
-        circuitId:
-            "abe6d955a212c337fa16498d5a378782330be5dc65e1bbc404a41f87383f3119",
-        runId: "Qv6DySvo3mjfiQLHkf8B",
-        quantumComputer: "IBM",
-        histogramCounts: {"00": 563, "01": 242, "10": 193, "11": 437},
-        histogramProbabilities: {
-          "00": 0.563,
-          "01": 0.242,
-          "10": 0.193,
-          "11": 0.437,
-        },
-        time: 9.43,
-        shots: 1000,
-      ),
-      Execution(
-        message: true,
-        circuitId: "ionq_002",
-        runId: "IonQxG7DaA",
-        quantumComputer: "IonQ",
-        histogramCounts: {"0": 112, "1": 88},
-        histogramProbabilities: {"0": 0.56, "1": 0.44},
-        time: 2.12,
-        shots: 200,
-      ),
-    ];
-
     return Column(
       children: [
-        // 🔹 Top gradient container
-        Container(
-          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
-          padding: const EdgeInsets.all(12),
-          width: double.infinity,
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              begin: Alignment.bottomLeft,
-              end: Alignment.topRight,
-              colors: [Color(0xFF6525FE), Color(0xFFF25F1C)],
-            ),
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.10),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                "Last shake - IBM Hanoi (32 qubits)",
-                style: TextStyle(color: Colors.white, fontSize: 16),
-              ),
-              const SizedBox(height: 6),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.start,
-                children: [
-                  GestureDetector(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => RunPage(execution: executionData[0]),
-                        ),
-                      );
-                    },
-                    child: buildGradientButton("Read Report", true),
-                  ),
-                  const SizedBox(width: 12),
-                  GestureDetector(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const StoryPage()),
-                      );
-                    },
-                    child: buildGradientButton("Skip to Story", false),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-
-        // 🔹 Pending circuit header
-        Container(
-          margin: const EdgeInsets.only(
-            left: 16,
-            right: 16,
-            top: 10,
-            bottom: 5,
-          ),
-          child: const Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Pending Circuit',
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w900,
-                  color: Colors.black,
-                ),
-              ),
-              Text(
-                'View all >',
-                style: TextStyle(fontSize: 15, color: Colors.black54),
-              ),
-            ],
-          ),
-        ),
-
-        // 🔹 Circuit SVG image
-        Container(
-          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
-          width: double.infinity,
-          child: SvgPicture.asset(
-            'assets/images/circuit1.svg',
-            height: 140,
-            width: double.infinity,
-            fit: BoxFit.contain,
-          ),
-        ),
-
-        // 🔹 Bottom gradient "Select Executor"
-        Container(
-          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
-          padding: const EdgeInsets.all(12),
-          width: double.infinity,
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              begin: Alignment.bottomLeft,
-              end: Alignment.topRight,
-              colors: [Color(0xFF6525FE), Color(0xFF1A91FC)],
-            ),
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.10),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                "Select & Run",
-                style: TextStyle(color: Colors.white, fontSize: 16),
-              ),
-              const SizedBox(height: 6),
-
-              // Executor selector
-              GestureDetector(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const ExecutorPage()),
-                  );
-                },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 8,
-                  ),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.bottomLeft,
-                      end: Alignment.topRight,
-                      colors: [
-                        Colors.black.withValues(alpha: .20),
-                        const Color(0xFFF7FAFC).withValues(alpha: .20),
-                      ],
-                    ),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        "IBM Hanoi (32 qubits)",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 14.5,
-                          fontWeight: FontWeight.w300,
-                        ),
-                      ),
-                      Icon(
-                        Icons.arrow_forward_ios,
-                        size: 16,
-                        color: Colors.white,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 10),
-
-              // 🔸 Run Pending Circuit Button → shows loading then navigates
-              GestureDetector(
-                onTap: () async {
-                  // show loading dialog
-                  showDialog(
-                    context: context,
-                    barrierDismissible: false,
-                    builder: (_) => const LoadingDialog(),
-                  );
-
-                  // wait for 5 seconds
-                  await Future.delayed(const Duration(seconds: 5));
-
-                  // close loading
-                  if (context.mounted) Navigator.of(context).pop();
-
-                  // navigate to RunPage
-                  if (context.mounted) {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => RunPage(execution: executionData[1]),
-                      ),
-                    );
-                  }
-                },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 8,
-                  ),
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      begin: Alignment.bottomLeft,
-                      end: Alignment.topRight,
-                      colors: [Color(0xFFFF3B30), Color(0xFFFFC107)],
-                    ),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        "Run Pending Circuit",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 14.5,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      Icon(
-                        Icons.play_arrow_rounded,
-                        size: 20,
-                        color: Colors.white,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
+        _recentRunCard(context),
+        _pendingHeader(),
+        _circuitImage(),
+        _executorCard(context),
       ],
     );
   }
 
-  // 🔹 Button builder helper
-  Widget buildGradientButton(String label, bool outlined) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 3),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(30),
-        border: outlined ? Border.all(color: Colors.white, width: 1.5) : null,
-        color: outlined
-            ? Colors.transparent
-            : Colors.white.withValues(alpha: 0.2),
+  // --- Top card showing last run summary
+  Widget _recentRunCard(BuildContext context) => Container(
+    margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
+    padding: const EdgeInsets.all(12),
+    decoration: BoxDecoration(
+      gradient: const LinearGradient(
+        begin: Alignment.bottomLeft,
+        end: Alignment.topRight,
+        colors: [Color(0xFF6525FE), Color(0xFFF25F1C)],
       ),
-      child: Row(
-        children: [
-          Text(
-            label,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
+      borderRadius: BorderRadius.circular(16),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withValues(alpha: 0.1),
+          blurRadius: 8,
+          offset: const Offset(0, 2),
+        ),
+      ],
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          "Last shake - IBM Hanoi (32 qubits)",
+          style: TextStyle(color: Colors.white, fontSize: 16),
+        ),
+        const SizedBox(height: 6),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.start,
+          children: [
+            GestureDetector(
+              onTap: () {
+                // Placeholder: navigate when you have stored runs
+              },
+              child: _gradientButton("Read Report", true),
+            ),
+            const SizedBox(width: 12),
+            GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const StoryPage()),
+                );
+              },
+              child: _gradientButton("Skip to Story", false),
+            ),
+          ],
+        ),
+      ],
+    ),
+  );
+
+  // --- Section header
+  Widget _pendingHeader() => Container(
+    margin: const EdgeInsets.fromLTRB(16, 10, 16, 5),
+    child: const Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          'Pending Circuit',
+          style: TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w900,
+            color: Colors.black,
+          ),
+        ),
+        Text(
+          'View all >',
+          style: TextStyle(fontSize: 15, color: Colors.black54),
+        ),
+      ],
+    ),
+  );
+
+  // --- Display circuit image
+  Widget _circuitImage() => Container(
+    margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
+    width: double.infinity,
+    child: SvgPicture.asset(
+      'assets/images/circuit1.svg',
+      height: 140,
+      fit: BoxFit.contain,
+    ),
+  );
+
+  // --- Executor and Run button
+  Widget _executorCard(BuildContext context) => Container(
+    margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
+    padding: const EdgeInsets.all(12),
+    decoration: BoxDecoration(
+      gradient: const LinearGradient(
+        begin: Alignment.bottomLeft,
+        end: Alignment.topRight,
+        colors: [Color(0xFF6525FE), Color(0xFF1A91FC)],
+      ),
+      borderRadius: BorderRadius.circular(16),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withValues(alpha: 0.1),
+          blurRadius: 8,
+          offset: const Offset(0, 2),
+        ),
+      ],
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          "Select & Run",
+          style: TextStyle(color: Colors.white, fontSize: 16),
+        ),
+        const SizedBox(height: 6),
+        GestureDetector(
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const ExecutorPage()),
+          ),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Colors.black.withValues(alpha: .20),
+                  const Color(0xFFF7FAFC).withValues(alpha: .20),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  "IBM Hanoi (32 qubits)",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 14.5,
+                    fontWeight: FontWeight.w300,
+                  ),
+                ),
+                Icon(Icons.arrow_forward_ios, size: 16, color: Colors.white),
+              ],
             ),
           ),
-          const SizedBox(width: 4),
-          const Icon(Icons.arrow_forward_ios, size: 12, color: Colors.white),
+        ),
+        const SizedBox(height: 10),
+        _runPendingCircuitButton(context),
+      ],
+    ),
+  );
+
+  // --- Run Pending Circuit
+  Widget _runPendingCircuitButton(BuildContext context) => GestureDetector(
+    onTap: () async {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => const LoadingDialog(),
+      );
+
+      try {
+        final requestBody = {
+          "user_id": "user_01",
+          "shots": 1000,
+          "quantum_computer": "ionq_simulator",
+          "circuit": {
+            "gates": [
+              {
+                "name": "h",
+                "qubits": [0],
+              },
+              {
+                "name": "cx",
+                "qubits": [0, 1],
+              },
+              {
+                "name": "measure",
+                "qubits": [0, 1],
+                "clbits": [0, 1],
+              },
+            ],
+            "num_qubits": 2,
+            "num_clbits": 2,
+          },
+        };
+
+        final circuitId = await QuantumAPI.makeRequest(requestBody);
+        Execution? execution;
+
+        if (circuitId != null) {
+          execution = await QuantumAPI.fetchResults(circuitId);
+        }
+
+        if (context.mounted) Navigator.of(context).pop();
+
+        if (context.mounted) {
+          if (execution != null) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => RunPage(execution: execution!)),
+            );
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Run timed out or no results returned.'),
+              ),
+            );
+          }
+        }
+      } catch (e) {
+        if (context.mounted) Navigator.of(context).pop();
+        if (context.mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('Error: $e')));
+        }
+      }
+    },
+
+    child: Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.bottomLeft,
+          end: Alignment.topRight,
+          colors: [Color(0xFFFF3B30), Color(0xFFFFC107)],
+        ),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: const Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            "Run Pending Circuit",
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 14.5,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          Icon(Icons.play_arrow_rounded, size: 20, color: Colors.white),
         ],
       ),
-    );
-  }
+    ),
+  );
+
+  // --- Reusable gradient button
+  Widget _gradientButton(String label, bool outlined) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 3),
+    decoration: BoxDecoration(
+      borderRadius: BorderRadius.circular(30),
+      border: outlined ? Border.all(color: Colors.white, width: 1.5) : null,
+      color: outlined
+          ? Colors.transparent
+          : Colors.white.withValues(alpha: 0.2),
+    ),
+    child: Row(
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(width: 4),
+        const Icon(Icons.arrow_forward_ios, size: 12, color: Colors.white),
+      ],
+    ),
+  );
 }

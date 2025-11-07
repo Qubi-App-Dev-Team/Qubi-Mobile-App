@@ -17,42 +17,6 @@ class RunPage extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: const Color(0xFFE6EEF8),
-      bottomNavigationBar: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Divider(color: Color(0xFFC7DDF0), height: 1, thickness: 1),
-          GestureDetector(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const StoryPage()),
-              );
-            },
-            child: Container(
-              margin: const EdgeInsets.all(16),
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF6525FE), Color(0xFF1A91FC)],
-                  begin: Alignment.bottomLeft,
-                  end: Alignment.topRight,
-                ),
-                borderRadius: BorderRadius.circular(30),
-              ),
-              child: const Center(
-                child: Text(
-                  "See the story of this run  ›",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 15,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
       appBar: AppBar(
         centerTitle: true,
         backgroundColor: const Color(0xFFE6EEF8),
@@ -69,21 +33,13 @@ class RunPage extends StatelessWidget {
             color: Colors.black,
           ),
         ),
-        actions: const [
-          Padding(
-            padding: EdgeInsets.only(right: 16),
-            child: Icon(Icons.more_horiz, color: Colors.black),
-          ),
-        ],
         bottom: const PreferredSize(
           preferredSize: Size.fromHeight(1),
           child: Divider(color: Color(0xFFC7DDF0), height: 1),
         ),
       ),
 
-      // ------------------------------------------------------------
-      // Body
-      // ------------------------------------------------------------
+      // --- Body
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -97,12 +53,42 @@ class RunPage extends StatelessWidget {
           ],
         ),
       ),
+
+      // --- Bottom navigation
+      bottomNavigationBar: GestureDetector(
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const StoryPage()),
+          );
+        },
+        child: Container(
+          margin: const EdgeInsets.all(16),
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xFF6525FE), Color(0xFF1A91FC)],
+              begin: Alignment.bottomLeft,
+              end: Alignment.topRight,
+            ),
+            borderRadius: BorderRadius.circular(30),
+          ),
+          child: const Center(
+            child: Text(
+              "See the story of this run  ›",
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w700,
+                fontSize: 15,
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 
-  // ----------------------------------------------------------
-  // EXECUTOR INFO CARD
-  // ----------------------------------------------------------
+  // --- Executor Info Card
   Widget _executorCard() => Container(
     width: double.infinity,
     padding: const EdgeInsets.all(16),
@@ -114,63 +100,51 @@ class RunPage extends StatelessWidget {
           children: [
             _donutPill(),
             const SizedBox(width: 10),
-            Row(
-              children: [
-                const Text(
-                  "›",
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.black87,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  execution.quantumComputer,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w900,
-                    color: Colors.black,
-                  ),
-                ),
-              ],
+            const Text(
+              "›",
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.black87,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(width: 6),
+            Text(
+              execution.hardwareDisplayName,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w900,
+                color: Colors.black,
+              ),
             ),
           ],
+        ),
+        const SizedBox(height: 8),
+        Text(
+          "Status: ${execution.status.toUpperCase()}",
+          style: const TextStyle(
+            color: Colors.black54,
+            fontWeight: FontWeight.w500,
+          ),
         ),
       ],
     ),
   );
 
-  // ----------------------------------------------------------
-  // CIRCUIT CARD (placeholder image)
-  // ----------------------------------------------------------
+  // --- Circuit Image Card
   Widget _circuitCard() => Container(
     width: double.infinity,
     decoration: _cardDecoration(),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                "Circuit",
-                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
-              ),
-              Text(
-                "Run ID: ${execution.runId}",
-                style: const TextStyle(
-                  fontSize: 13,
-                  color: Colors.black54,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ],
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Text(
+            "Circuit",
+            style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
           ),
         ),
-
         const Divider(color: Color(0xFFE0E6ED), height: 1),
         Container(
           margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
@@ -185,9 +159,7 @@ class RunPage extends StatelessWidget {
     ),
   );
 
-  // ----------------------------------------------------------
-  // RESULTS CARD — histogram
-  // ----------------------------------------------------------
+  // --- Results Histogram Card
   Widget _resultsCard(
     Map<String, int> results,
     String totalShots,
@@ -311,6 +283,14 @@ class RunPage extends StatelessWidget {
                     fontWeight: FontWeight.w500,
                   ),
                 ),
+                Text(
+                  "Created at: ${execution.createdAt}",
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Colors.black45,
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
               ],
             ),
           ),
@@ -319,9 +299,7 @@ class RunPage extends StatelessWidget {
     );
   }
 
-  // ----------------------------------------------------------
-  // HELPERS
-  // ----------------------------------------------------------
+  // --- Helpers
   BoxDecoration _cardDecoration() => BoxDecoration(
     color: Colors.white,
     borderRadius: BorderRadius.circular(20),
