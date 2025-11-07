@@ -114,7 +114,7 @@ class _PromptOptionsGroupState extends State<PromptOptionsGroup> {
             if (_checked && widget.allowRetry)
               TextButton(
                 onPressed: _reset,
-                child: const Text('Reset'),
+                child: const Text('Retry'),
               ),
             const Spacer(),
             if (_checked)
