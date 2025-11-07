@@ -66,7 +66,7 @@ class _ExecHistoryPageState extends State<ExecHistoryPage> {
       PageRouteBuilder(
         opaque: false,
         barrierColor: Colors.black26,
-        pageBuilder: (_, __, ___) => _FilterPanel(
+        pageBuilder: (_, _, _) => _FilterPanel(
           filterSentOut: filterSentOut,
           selectedHardware: selectedHardware,
           selectedDate: selectedDate,
@@ -78,7 +78,7 @@ class _ExecHistoryPageState extends State<ExecHistoryPage> {
             });
           },
         ),
-        transitionsBuilder: (_, animation, __, child) {
+        transitionsBuilder: (_, animation, _, child) {
           const begin = Offset(1.0, 0.0);
           const end = Offset.zero;
           final tween = Tween(
@@ -219,7 +219,7 @@ class _ExecHistoryPageState extends State<ExecHistoryPage> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
-                color: badgeColor.withOpacity(0.15),
+                color: badgeColor.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(

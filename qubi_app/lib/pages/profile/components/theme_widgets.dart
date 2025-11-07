@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 class ThemeCollectionCard extends StatefulWidget {
-  const ThemeCollectionCard();
+  const ThemeCollectionCard({super.key});
 
   @override
   State<ThemeCollectionCard> createState() => _ThemeCollectionCardState();
@@ -85,7 +85,7 @@ class _ThemeDotSvg extends StatelessWidget {
   Widget build(BuildContext context) {
     // base case image.
     final assetName =
-        'assets/images/themedot${index}${selected ? 'selected' : ''}.svg';
+        'assets/images/themedot$index${selected ? 'selected' : ''}.svg';
 
     // on click -> change which element has an check mark on it (selected).
     return GestureDetector(

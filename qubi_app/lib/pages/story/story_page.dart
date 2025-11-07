@@ -4,7 +4,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 //stateful widget means it can change based on state
 //so in this case the content displayed changes based on what story we are on
 class StoryPage extends StatefulWidget {
-  const StoryPage({Key? key}) : super(key: key);
+  const StoryPage({super.key});
 
   @override
   State<StoryPage> createState() => _StoryPageState();
