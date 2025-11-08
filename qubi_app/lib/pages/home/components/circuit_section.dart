@@ -4,13 +4,40 @@ import 'package:qubi_app/pages/profile/models/execution.dart';
 import 'package:qubi_app/pages/home/executor.dart';
 import 'package:qubi_app/pages/story/story_page.dart';
 import 'package:qubi_app/pages/home/run.dart';
+import 'package:qubi_app/api/api_client.dart';
+import 'package:qubi_app/user_bloc/stored_user_info.dart';
 
-class CircuitSection extends StatelessWidget {
+class CircuitSection extends StatefulWidget {
   const CircuitSection({super.key});
 
   @override
+  State<CircuitSection> createState() => _CircuitSectionState();
+}
+
+class _CircuitSectionState extends State<CircuitSection> {
+  bool _isSubmitting = false;
+
+  // 🧩 Test circuit payload (temporary)
+  final Map<String, dynamic> _testCircuit = const {
+    "gates": [
+      {"name": "h", "qubits": [0]},
+      {"name": "cx", "qubits": [0, 1]},
+      {"name": "measure", "qubits": [0, 1], "clbits": [0, 1]},
+    ],
+    "num_qubits": 2,
+    "num_clbits": 2,
+  };
+
+  final List<Execution> executionData = [ Execution( message: true, circuitId: "abe6d955a212c337fa16498d5a378782330be5dc65e1bbc404a41f87383f3119", runId: "Qv6DySvo3mjfiQLHkf8B", quantumComputer: "IBM", histogramCounts: {"00": 563, "01": 242, "10": 193, "11": 437}, histogramProbabilities: { "00": 0.563, "01": 0.242, "10": 0.193, "11": 0.437, }, time: 9.43, shots: 1000, ), Execution( message: true, circuitId: "ionq_002", runId: "IonQxG7DaA", quantumComputer: "IonQ", histogramCounts: {"0": 112, "1": 88}, histogramProbabilities: {"0": 0.56, "1": 0.44}, time: 2.12, shots: 200, ), ];
+  // Static metadata (for now)
+  static const String _quantumComputer = "ionq_simulator";
+  static const int _shots = 1000;
+
+  
+
+  @override
   Widget build(BuildContext context) {
-    // Sample executions — replace later with live backend data.
+    // Sample executions — placeholder data for static runs
     final List<Execution> executionData = [
       Execution(
         message: true,
@@ -215,46 +242,44 @@ class CircuitSection extends StatelessWidget {
 
               const SizedBox(height: 10),
 
-              // 🔸 Run Pending Circuit Button → RunPage (same model)
+              // 🔸 Run Pending Circuit Button → Calls API + navigates
               GestureDetector(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => RunPage(execution: executionData[1]),
+                onTap: _isSubmitting ? null : _onRunPendingCircuit,
+                child: Opacity(
+                  opacity: _isSubmitting ? 0.6 : 1.0,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 8,
                     ),
-                  );
-                },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 8,
-                  ),
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      begin: Alignment.bottomLeft,
-                      end: Alignment.topRight,
-                      colors: [Color(0xFFFF3B30), Color(0xFFFFC107)],
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        begin: Alignment.bottomLeft,
+                        end: Alignment.topRight,
+                        colors: [Color(0xFFFF3B30), Color(0xFFFFC107)],
+                      ),
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        "Run Pending Circuit",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 14.5,
-                          fontWeight: FontWeight.w700,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          _isSubmitting
+                              ? "Starting run..."
+                              : "Run Pending Circuit",
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 14.5,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
-                      ),
-                      Icon(
-                        Icons.play_arrow_rounded,
-                        size: 20,
-                        color: Colors.white,
-                      ),
-                    ],
+                        const Icon(
+                          Icons.play_arrow_rounded,
+                          size: 20,
+                          color: Colors.white,
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -263,6 +288,48 @@ class CircuitSection extends StatelessWidget {
         ),
       ],
     );
+  }
+
+  Future<void> _onRunPendingCircuit() async {
+    setState(() => _isSubmitting = true);
+    final messenger = ScaffoldMessenger.of(context);
+
+    try {
+      final userId = StoredUserInfo.userID;
+
+      // Call /make_request
+      final runRequestId = await ApiClient.makeRequest(
+        userId: userId,
+        circuit: _testCircuit,
+        quantumComputer: _quantumComputer,
+        shots: _shots,
+      );
+
+      if (!mounted) return;
+
+      messenger.showSnackBar(
+        SnackBar(content: Text("Run started! ID: $runRequestId")),
+      );
+
+      // Navigate to RunPage (RunPage will show LoadingDialog + poll)
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => RunPage(
+            runRequestId: runRequestId,
+            quantumComputer: _quantumComputer,
+            shots: _shots,
+          ),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      messenger.showSnackBar(
+        SnackBar(content: Text("Error running circuit: $e")),
+      );
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
+    }
   }
 
   // 🔹 Button builder helper
