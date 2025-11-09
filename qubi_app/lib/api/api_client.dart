@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:qubi_app/pages/profile/models/execution.dart';
+import 'package:qubi_app/pages/profile/models/run_history.dart';
+import 'package:qubi_app/pages/profile/models/execution_model.dart';
 import 'package:qubi_app/user_bloc/stored_user_info.dart'; // for StoredUserInfo.userID
 
 /// Global debug flag (replace this with your own variable if declared elsewhere)
@@ -11,7 +13,7 @@ const bool debug = true;
 class ApiClient {
   // Load your base URL from .env, fallback to localhost
   static final String _baseUrl =
-      dotenv.env['API_BASE_URL'] ?? 'http://127.0.0.1:8000';
+      dotenv.env['API_BASE_URL'] ?? 'http://10.0.2.2:8000';
 
   // =======================================================
   // 1️⃣  MAKE REQUEST
@@ -143,58 +145,27 @@ class ApiClient {
   // =======================================================
   /// Calls `/fetch_run_history` to retrieve recent executions for a user.
   /// Returns a list of `Execution` objects.
-  static Future<List<Execution>> fetchRunHistory({int limit = 10}) async {
+  static Future<List<ExecutionModel>> fetchRunHistory({int limit = 10}) async {
     final userId = StoredUserInfo.userID;
-    final url = Uri.parse('$_baseUrl/fetch_run_history');
+    final url = Uri.parse('$_baseUrl/fetch_run_history?user_id=$userId&limit=$limit');
 
-    final body = jsonEncode({
-      'user_id': userId,
-      'limit': limit,
-    });
+    final response = await http.get(url, headers: {'Content-Type': 'application/json'});
 
-    if (debug) {
-      print('[ApiClient] → POST $url');
-      print('Request body: $body');
-    }
-
-    final response = await http.post(
-      url,
-      headers: {'Content-Type': 'application/json'},
-      body: body,
-    );
 
     if (response.statusCode == 200) {
       final decoded = jsonDecode(response.body);
       final historyList = decoded['history'] as List<dynamic>?;
 
       if (historyList == null) {
-        throw Exception('Missing "history" field in /fetch_run_history response.');
+        throw Exception('Missing "history" field in response');
       }
 
-      final executions = historyList.map((item) {
-        return Execution(
-          message: item['success'] ?? false,
-          circuitId: item['circuit_id'] ?? 'unknown',
-          runId: item['run_request_id'] ?? 'N/A',
-          quantumComputer: item['quantum_computer'] ?? 'unknown',
-          histogramCounts:
-              Map<String, int>.from(item['histogram_counts'] ?? {}),
-          histogramProbabilities:
-              Map<String, double>.from(item['histogram_probabilities'] ?? {}),
-          time: (item['elapsed_time_s'] ?? 0).toDouble(),
-          shots: (item['shots'] ?? 0).toInt(),
-        );
-      }).toList();
-
-      if (debug) print('[ApiClient] ✅ Retrieved ${executions.length} runs.');
-      return executions;
+      final runs =
+          historyList.map((e) => ExecutionModel.fromJson(e)).toList();
+      return runs;
     } else {
-      if (debug) {
-        print('[ApiClient] ❌ fetchRunHistory failed: ${response.statusCode}');
-        print(response.body);
-      }
       throw Exception(
-          'Failed to call /fetch_run_history. Status: ${response.statusCode}');
+          'Failed to fetch run history. Status: ${response.statusCode}');
     }
   }
 }

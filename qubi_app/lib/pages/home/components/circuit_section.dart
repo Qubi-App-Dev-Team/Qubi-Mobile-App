@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:qubi_app/pages/profile/models/execution.dart';
+import 'package:qubi_app/pages/profile/models/execution_model.dart';
 import 'package:qubi_app/pages/home/executor.dart';
 import 'package:qubi_app/pages/story/story_page.dart';
 import 'package:qubi_app/pages/home/run.dart';
@@ -28,7 +29,35 @@ class _CircuitSectionState extends State<CircuitSection> {
     "num_clbits": 2,
   };
 
-  final List<Execution> executionData = [ Execution( message: true, circuitId: "abe6d955a212c337fa16498d5a378782330be5dc65e1bbc404a41f87383f3119", runId: "Qv6DySvo3mjfiQLHkf8B", quantumComputer: "IBM", histogramCounts: {"00": 563, "01": 242, "10": 193, "11": 437}, histogramProbabilities: { "00": 0.563, "01": 0.242, "10": 0.193, "11": 0.437, }, time: 9.43, shots: 1000, ), Execution( message: true, circuitId: "ionq_002", runId: "IonQxG7DaA", quantumComputer: "IonQ", histogramCounts: {"0": 112, "1": 88}, histogramProbabilities: {"0": 0.56, "1": 0.44}, time: 2.12, shots: 200, ), ];
+  //final List<Execution> executionData = [ Execution( message: true, circuitId: "abe6d955a212c337fa16498d5a378782330be5dc65e1bbc404a41f87383f3119", runId: "Qv6DySvo3mjfiQLHkf8B", quantumComputer: "IBM", histogramCounts: {"00": 563, "01": 242, "10": 193, "11": 437}, histogramProbabilities: { "00": 0.563, "01": 0.242, "10": 0.193, "11": 0.437, }, time: 9.43, shots: 1000, ), Execution( message: true, circuitId: "ionq_002", runId: "IonQxG7DaA", quantumComputer: "IonQ", histogramCounts: {"0": 112, "1": 88}, histogramProbabilities: {"0": 0.56, "1": 0.44}, time: 2.12, shots: 200, ), ];
+  final List<ExecutionModel> executionData = [
+    ExecutionModel(
+      userId: "user_01",
+      circuitId:
+          "abe6d955a212c337fa16498d5a378782330be5dc65e1bbc404a41f87383f3119",
+      quantumComputer: "IBM",
+      histogramCounts: {"00": 563, "01": 242, "10": 193, "11": 437},
+      histogramProbabilities: {
+        "00": 0.563,
+        "01": 0.242,
+        "10": 0.193,
+        "11": 0.437,
+      },
+      elapsedTimeS: 9.43,
+      shots: 1000,
+      success: true,
+    ),
+    ExecutionModel(
+      userId: "user_01",
+      circuitId: "ionq_002",
+      quantumComputer: "IonQ",
+      histogramCounts: {"0": 112, "1": 88},
+      histogramProbabilities: {"0": 0.56, "1": 0.44},
+      elapsedTimeS: 2.12,
+      shots: 200,
+      success: true,
+    ),
+  ];
   // Static metadata (for now)
   static const String _quantumComputer = "ionq_simulator";
   static const int _shots = 1000;
@@ -38,35 +67,6 @@ class _CircuitSectionState extends State<CircuitSection> {
   @override
   Widget build(BuildContext context) {
     // Sample executions — placeholder data for static runs
-    final List<Execution> executionData = [
-      Execution(
-        message: true,
-        circuitId:
-            "abe6d955a212c337fa16498d5a378782330be5dc65e1bbc404a41f87383f3119",
-        runId: "Qv6DySvo3mjfiQLHkf8B",
-        quantumComputer: "IBM",
-        histogramCounts: {"00": 563, "01": 242, "10": 193, "11": 437},
-        histogramProbabilities: {
-          "00": 0.563,
-          "01": 0.242,
-          "10": 0.193,
-          "11": 0.437,
-        },
-        time: 9.43,
-        shots: 1000,
-      ),
-      Execution(
-        message: true,
-        circuitId: "ionq_002",
-        runId: "IonQxG7DaA",
-        quantumComputer: "IonQ",
-        histogramCounts: {"0": 112, "1": 88},
-        histogramProbabilities: {"0": 0.56, "1": 0.44},
-        time: 2.12,
-        shots: 200,
-      ),
-    ];
-
     return Column(
       children: [
         // 🔹 Top gradient container

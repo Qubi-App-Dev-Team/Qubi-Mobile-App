@@ -4,12 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:qubi_app/pages/profile/models/execution.dart';
+import 'package:qubi_app/pages/profile/models/execution_model.dart'; // ⬅️ unified model
 import 'package:qubi_app/pages/story/story_page.dart';
 import 'package:qubi_app/pages/home/components/loading_dialog.dart';
 
 class RunPage extends StatefulWidget {
-  final Execution? execution; // old flow
+  final ExecutionModel? execution; // old flow now uses ExecutionModel
   final String? runRequestId; // new flow
   final String? quantumComputer;
   final int? shots;
@@ -38,13 +38,13 @@ class _RunPageState extends State<RunPage> {
   void initState() {
     super.initState();
 
-    // Old static path
+    // Old static path (now ExecutionModel)
     if (widget.execution != null) {
       final e = widget.execution!;
-      _histogramCounts = e.histogramCounts;
-      _elapsedTime = e.time;
-      _shots = e.shots;
-      _quantumComputer = e.quantumComputer;
+      _histogramCounts = e.histogramCounts ?? {};
+      _elapsedTime = e.elapsedTimeS; // ⬅️ was e.time
+      _shots = e.shots ?? 0;
+      _quantumComputer = e.quantumComputer ?? "";
     }
     // New Firestore path
     else if (widget.runRequestId != null) {
