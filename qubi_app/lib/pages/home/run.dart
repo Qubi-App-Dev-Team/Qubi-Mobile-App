@@ -6,7 +6,6 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:qubi_app/pages/profile/models/execution_model.dart'; // ⬅️ unified model
 import 'package:qubi_app/pages/story/story_page.dart';
-import 'package:qubi_app/pages/home/components/loading_dialog.dart';
 
 class RunPage extends StatefulWidget {
   final ExecutionModel? execution; // old flow now uses ExecutionModel

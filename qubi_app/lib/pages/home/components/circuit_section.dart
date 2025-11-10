@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:qubi_app/pages/profile/models/execution.dart';
 import 'package:qubi_app/pages/profile/models/execution_model.dart';
 import 'package:qubi_app/pages/home/executor.dart';
 import 'package:qubi_app/pages/story/story_page.dart';
@@ -308,7 +307,7 @@ class _CircuitSectionState extends State<CircuitSection> {
       if (!mounted) return;
 
       messenger.showSnackBar(
-        SnackBar(content: Text("Run started! ID: $runRequestId")),
+        SnackBar(content: Text("Circuit Successfuly Sent to $_quantumComputer")),
       );
 
       // Navigate to RunPage (RunPage will show LoadingDialog + poll)

@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:qubi_app/pages/profile/models/execution.dart';
-import 'package:qubi_app/pages/profile/models/run_history.dart';
 import 'package:qubi_app/pages/profile/models/execution_model.dart';
 import 'package:qubi_app/user_bloc/stored_user_info.dart'; // for StoredUserInfo.userID
 
