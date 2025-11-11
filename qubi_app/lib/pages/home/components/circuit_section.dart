@@ -4,9 +4,19 @@ import 'package:qubi_app/pages/profile/models/execution.dart';
 import 'package:qubi_app/pages/home/executor.dart';
 import 'package:qubi_app/pages/story/story_page.dart';
 import 'package:qubi_app/pages/home/run.dart';
+import 'package:qubi_app/pages/home/components/dynamic_circuit.dart';
+import 'dart:convert';
+import 'package:flutter/services.dart' show rootBundle;
 
 class CircuitSection extends StatelessWidget {
   const CircuitSection({super.key});
+
+  Future<List<Gate>> loadCircuit() async {
+    final data = await rootBundle.loadString('assets/circuit.json');
+    final jsonData = json.decode(data);
+    List gates = jsonData['gates'];
+    return gates.map((g) => Gate.fromJson(g)).toList();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -130,15 +140,42 @@ class CircuitSection extends StatelessWidget {
         ),
 
         // 🔹 Circuit SVG image
-        Container(
-          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
-          width: double.infinity,
-          child: SvgPicture.asset(
-            'assets/images/circuit1.svg',
-            height: 140,
-            width: double.infinity,
-            fit: BoxFit.contain,
-          ),
+        FutureBuilder<List<Gate>>(
+          future: loadCircuit(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Padding(
+                padding: EdgeInsets.all(16),
+                child: Center(child: CircularProgressIndicator()),
+              );
+            } else if (snapshot.hasError) {
+              return Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text(
+                  'Error loading circuit: ${snapshot.error}',
+                  style: const TextStyle(color: Colors.red),
+                ),
+              );
+            } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+              return const Padding(
+                padding: EdgeInsets.all(16),
+                child: Text('No circuit data found'),
+              );
+            }
+
+            // ✅ Render the dynamic circuit widget
+            return Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: CircuitView(
+                  gates: snapshot.data!,
+                  numPositions: 10,  // adjust grid length
+                  gridSpacing: 80,   // spacing between positions
+                ),
+              ),
+            );
+          },
         ),
 
         // 🔹 Bottom gradient "Select Executor"

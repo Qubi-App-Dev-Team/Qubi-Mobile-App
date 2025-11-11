@@ -1,0 +1,9 @@
+{
+  "qubits": 2,
+  "gates": [
+    { "qubit": 0, "position": 1, "type": "X" },
+    { "qubit": 1, "position": 2, "type": "X" },
+    { "qubit": 0, "position": 3, "type": "H" },
+    { "qubit": 0, "position": 4, "type": "CNOT", "targetQubit": 1 }
+  ]
+}
