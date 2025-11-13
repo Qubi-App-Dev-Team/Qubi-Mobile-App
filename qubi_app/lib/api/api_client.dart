@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:qubi_app/pages/profile/models/execution.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:qubi_app/pages/profile/models/execution_model.dart';
 import 'package:qubi_app/user_bloc/stored_user_info.dart'; // for StoredUserInfo.userID
 
@@ -52,6 +53,16 @@ class ApiClient {
         throw Exception('No run_request_id returned from /make_request.');
       }
       if (debug) print('[ApiClient] ✅ run_request_id: $runRequestId');
+      try {
+          final userId = StoredUserInfo.userID;
+          await FirebaseFirestore.instance
+              .collection('Users')
+              .doc(userId)
+              .update({'current_run_request_id': runRequestId});
+          if (debug) print('[ApiClient] 🔥 Updated current_run_request_id in Firestore.');
+        } catch (e) {
+          if (debug) print('[ApiClient] ⚠️ Failed to update Firestore: $e');
+      }
       return runRequestId;
     } else {
       if (debug) {

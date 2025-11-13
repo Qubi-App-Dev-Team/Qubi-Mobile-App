@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:cloud_firestore/cloud_firestore.dart'; // 🔹 Added import
 import 'package:qubi_app/pages/profile/models/execution_model.dart';
 import 'package:qubi_app/pages/home/executor.dart';
 import 'package:qubi_app/pages/story/story_page.dart';
@@ -28,7 +29,6 @@ class _CircuitSectionState extends State<CircuitSection> {
     "num_clbits": 2,
   };
 
-  //final List<Execution> executionData = [ Execution( message: true, circuitId: "abe6d955a212c337fa16498d5a378782330be5dc65e1bbc404a41f87383f3119", runId: "Qv6DySvo3mjfiQLHkf8B", quantumComputer: "IBM", histogramCounts: {"00": 563, "01": 242, "10": 193, "11": 437}, histogramProbabilities: { "00": 0.563, "01": 0.242, "10": 0.193, "11": 0.437, }, time: 9.43, shots: 1000, ), Execution( message: true, circuitId: "ionq_002", runId: "IonQxG7DaA", quantumComputer: "IonQ", histogramCounts: {"0": 112, "1": 88}, histogramProbabilities: {"0": 0.56, "1": 0.44}, time: 2.12, shots: 200, ), ];
   final List<ExecutionModel> executionData = [
     ExecutionModel(
       userId: "user_01",
@@ -57,18 +57,15 @@ class _CircuitSectionState extends State<CircuitSection> {
       success: true,
     ),
   ];
-  // Static metadata (for now)
+
   static const String _quantumComputer = "ionq_simulator";
   static const int _shots = 1000;
 
-  
-
   @override
   Widget build(BuildContext context) {
-    // Sample executions — placeholder data for static runs
     return Column(
       children: [
-        // 🔹 Top gradient container
+        // 🔹 Top gradient container (unchanged)
         Container(
           margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
           padding: const EdgeInsets.all(12),
@@ -99,7 +96,6 @@ class _CircuitSectionState extends State<CircuitSection> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.start,
                 children: [
-                  // "Read Report" → RunPage (with full model)
                   GestureDetector(
                     onTap: () {
                       Navigator.push(
@@ -112,7 +108,6 @@ class _CircuitSectionState extends State<CircuitSection> {
                     child: buildGradientButton("Read Report", true),
                   ),
                   const SizedBox(width: 12),
-                  // "Skip to Story"
                   GestureDetector(
                     onTap: () {
                       Navigator.push(
@@ -128,7 +123,7 @@ class _CircuitSectionState extends State<CircuitSection> {
           ),
         ),
 
-        // 🔹 Pending circuit header
+        // 🔹 Pending circuit header (unchanged)
         Container(
           margin: const EdgeInsets.only(
             left: 16,
@@ -155,7 +150,7 @@ class _CircuitSectionState extends State<CircuitSection> {
           ),
         ),
 
-        // 🔹 Circuit SVG image
+        // 🔹 Circuit SVG image (unchanged)
         Container(
           margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
           width: double.infinity,
@@ -167,7 +162,7 @@ class _CircuitSectionState extends State<CircuitSection> {
           ),
         ),
 
-        // 🔹 Bottom gradient "Select Executor"
+        // 🔹 Bottom gradient container (modified ONLY inside this block)
         Container(
           margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
           padding: const EdgeInsets.all(12),
@@ -195,6 +190,8 @@ class _CircuitSectionState extends State<CircuitSection> {
                 style: TextStyle(color: Colors.white, fontSize: 16),
               ),
               const SizedBox(height: 6),
+
+              // Executor selector (unchanged)
               GestureDetector(
                 onTap: () {
                   Navigator.push(
@@ -241,47 +238,102 @@ class _CircuitSectionState extends State<CircuitSection> {
 
               const SizedBox(height: 10),
 
-              // 🔸 Run Pending Circuit Button → Calls API + navigates
-              GestureDetector(
-                onTap: _isSubmitting ? null : _onRunPendingCircuit,
-                child: Opacity(
-                  opacity: _isSubmitting ? 0.6 : 1.0,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 8,
-                    ),
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        begin: Alignment.bottomLeft,
-                        end: Alignment.topRight,
-                        colors: [Color(0xFFFF3B30), Color(0xFFFFC107)],
-                      ),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          _isSubmitting
-                              ? "Starting run..."
-                              : "Run Pending Circuit",
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 14.5,
-                            fontWeight: FontWeight.w700,
+              // 🔸 🔹 ONLY THIS PART BELOW IS NEW 🔹 🔸
+              StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+                stream: FirebaseFirestore.instance
+                    .collection('Users')
+                    .doc(StoredUserInfo.userID)
+                    .snapshots(),
+                builder: (context, snapshot) {
+                  final userData = snapshot.data?.data();
+                  final currentRunId = userData?['current_run_request_id'];
+
+                  // CASE 1 → Run in progress
+                  if (currentRunId != null) {
+                    return GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => RunPage(runRequestId: currentRunId),
                           ),
+                        );
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 8),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            begin: Alignment.bottomLeft,
+                            end: Alignment.topRight,
+                            colors: [Color(0xFFFF8A00), Color(0xFFFFC107)],
+                          ),
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                        const Icon(
-                          Icons.play_arrow_rounded,
-                          size: 20,
-                          color: Colors.white,
+                        child: const Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              "Run in progress",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 14.5,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            Icon(
+                              Icons.play_arrow_rounded,
+                              size: 20,
+                              color: Colors.white,
+                            ),
+                          ],
                         ),
-                      ],
+                      ),
+                    );
+                  }
+
+                  // CASE 2 → No run in progress (default behavior)
+                  return GestureDetector(
+                    onTap: _isSubmitting ? null : _onRunPendingCircuit,
+                    child: Opacity(
+                      opacity: _isSubmitting ? 0.6 : 1.0,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 8),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            begin: Alignment.bottomLeft,
+                            end: Alignment.topRight,
+                            colors: [Color(0xFFFF3B30), Color(0xFFFFC107)],
+                          ),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              _isSubmitting
+                                  ? "Starting run..."
+                                  : "Run Pending Circuit",
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 14.5,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            const Icon(
+                              Icons.play_arrow_rounded,
+                              size: 20,
+                              color: Colors.white,
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
-                  ),
-                ),
+                  );
+                },
               ),
+              // 🔸 🔹 END OF NEW CODE 🔹 🔸
             ],
           ),
         ),
@@ -306,11 +358,11 @@ class _CircuitSectionState extends State<CircuitSection> {
 
       if (!mounted) return;
 
+      // ✅ Show snackbar only for an initial run (not returning to progress)
       messenger.showSnackBar(
-        SnackBar(content: Text("Circuit Successfuly Sent to $_quantumComputer")),
+        SnackBar(content: Text("Circuit successfully sent to $_quantumComputer")),
       );
 
-      // Navigate to RunPage (RunPage will show LoadingDialog + poll)
       Navigator.push(
         context,
         MaterialPageRoute(
@@ -331,7 +383,7 @@ class _CircuitSectionState extends State<CircuitSection> {
     }
   }
 
-  // 🔹 Button builder helper
+  // 🔹 Button builder helper (unchanged)
   Widget buildGradientButton(String label, bool outlined) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 3),
