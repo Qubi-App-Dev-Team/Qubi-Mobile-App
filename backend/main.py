@@ -166,6 +166,44 @@ async def fetch_run_history(user_id: str, limit: int = 20):
 
     return JSONResponse(status_code=200, content={"history": history})
 
+@app.get("/fetch_last_shake/{user_id}")
+async def fetch_last_shake(user_id: str):
+    """
+    Returns the most recent run_result document for a given user.
+    Includes all fields exactly as stored in Firestore.
+    """
+
+    try:
+        # Query the latest run_result by creation time
+        query = (
+            db.collection("run_results")
+            .where("user_id", "==", user_id)
+            .order_by("created_at", direction=firestore.Query.DESCENDING)
+            .limit(1)
+            .stream()
+        )
+
+        doc = next(query, None)
+        if not doc:
+            return {"status": "NONE", "message": "No completed runs found"}
+
+        data = doc.to_dict()
+        data["run_result_id"] = doc.id  # Optional helper field
+
+        # Convert Firestore timestamp to ISO string
+        created_at = data.get("created_at")
+        if created_at:
+            try:
+                data["created_at"] = created_at.isoformat()
+            except Exception:
+                pass  # If it's already a string, skip conversion
+
+        return data
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 
 '''
 {

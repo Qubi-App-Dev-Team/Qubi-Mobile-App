@@ -40,6 +40,14 @@ def add_results(run_request_id, user_id, circuit_id, elapsed_time, shots, result
         "elapsed_time_s": elapsed_time,
         "created_at": firestore.SERVER_TIMESTAMP
     }
-
     runs_ref.set(data)
+
+    try:
+        db.collection('Users').document(user_id).update({
+            'current_run_request_id': firestore.DELETE_FIELD
+        })
+        print(f"[Firestore] Cleared current_run_request_id for user {user_id}")
+    except Exception as e:
+        print(f"[Firestore] Warning: failed to clear current_run_request_id for user {user_id}: {e}")
+
     return run_request_id
