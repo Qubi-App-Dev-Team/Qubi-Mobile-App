@@ -28,6 +28,8 @@ class RunPage extends StatefulWidget {
 class _RunPageState extends State<RunPage> {
   StreamSubscription<DocumentSnapshot>? _listener;
   bool _isLoading = false;
+  bool _hasError = false;
+  String _errorMessage = '';
   Map<String, int> _histogramCounts = {};
   double? _elapsedTime; // null until result arrives
   int _shots = 0;
@@ -64,15 +66,29 @@ class _RunPageState extends State<RunPage> {
       if (!snapshot.exists) return;
       final data = snapshot.data() as Map<String, dynamic>;
 
-      if (data['success'] == true && mounted) {
-        setState(() {
-          _isLoading = false;
-          _histogramCounts =
-              Map<String, int>.from(data['histogram_counts'] ?? {});
-          _elapsedTime = (data['elapsed_time_s'] ?? 0).toDouble();
-          _quantumComputer = data['quantum_computer'] ?? '';
-          _shots = (data['shots'] ?? 0);
-        });
+      if (mounted) {
+        if (data['success'] == true) {
+          // Success case
+          setState(() {
+            _isLoading = false;
+            _hasError = false;
+            _histogramCounts =
+                Map<String, int>.from(data['histogram_counts'] ?? {});
+            _elapsedTime = (data['elapsed_time_s'] ?? 0).toDouble();
+            _quantumComputer = data['quantum_computer'] ?? '';
+            _shots = (data['shots'] ?? 0);
+          });
+        } else if (data['success'] == false) {
+          // Error case
+          setState(() {
+            _isLoading = false;
+            _hasError = true;
+            _errorMessage = data['error_message'] ?? 'Unknown error occurred';
+            _quantumComputer = data['quantum_computer'] ?? '';
+            _shots = (data['shots'] ?? 0);
+            _elapsedTime = (data['elapsed_time_s'] ?? 0).toDouble();
+          });
+        }
       }
     });
   }
@@ -273,7 +289,41 @@ class _RunPageState extends State<RunPage> {
 
           AspectRatio(
             aspectRatio: 1.6,
-            child: hasResults
+            child: _hasError
+                ? Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(
+                            Icons.error_outline,
+                            color: Colors.red,
+                            size: 48,
+                          ),
+                          const SizedBox(height: 16),
+                          const Text(
+                            "Execution Failed",
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.red,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            _errorMessage,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: Colors.black87,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  )
+                : hasResults
                 ? BarChart(
                     BarChartData(
                       maxY: chartMaxY,
