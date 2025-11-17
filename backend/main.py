@@ -23,8 +23,9 @@ from quantum import send_circuit
 class MakeRequestDTO(BaseModel):
     user_id: str
     shots: int = Field(gt=0)
-    circuit: Dict[str, Any]               
-    quantum_computer: str   
+    circuit: Dict[str, Any]
+    quantum_computer: str
+    api_keys: Optional[Dict[str, str]] = None   
 
 # App & Firestore init
 load_dotenv()
@@ -94,13 +95,14 @@ async def make_request(dto: MakeRequestDTO, bg: BackgroundTasks):
     })
 
     bg.add_task(
-        send_circuit,                 
-        run_request_id,               
-        dto.user_id,                 
-        circuit_id,                      
-        dto.circuit,                  
-        dto.quantum_computer,         
-        dto.shots,                 
+        send_circuit,
+        run_request_id,
+        dto.user_id,
+        circuit_id,
+        dto.circuit,
+        dto.quantum_computer,
+        dto.shots,
+        dto.api_keys,
     )
 
     return {"run_request_id": run_request_id}

@@ -15,24 +15,27 @@ load_dotenv()
 # Suppress IonQ transpiler optimization level warning
 warnings.filterwarnings('ignore', category=IonQTranspileLevelWarning)
 
-def send_to_ionq(circuit: QuantumCircuit, shots: int = 1000, backend_name: str = "ionq_simulator"):
+def send_to_ionq(circuit: QuantumCircuit, shots: int = 1000, backend_name: str = "ionq_simulator", api_token: str = None):
     """
     Send a quantum circuit to IonQ for execution.
-    
+
     Args:
         circuit: Qiskit QuantumCircuit object
         shots: Number of shots to run (default: 1000)
         backend_name: IonQ backend to use (default: "ionq_simulator")
                      Options: "ionq_simulator", "ionq_qpu"
-    
+        api_token: Optional user-provided API token (if None, uses environment variable)
+
     Returns:
         Job result from IonQ
     """
-    # Get IonQ API token from environment variable
-    api_token = os.getenv('IONQ_API_TOKEN')
+    # Get IonQ API token from user input or environment variable
+    if api_token is None:
+        api_token = os.getenv('IONQ_API_TOKEN')
+
     if not api_token:
-        raise ValueError("IONQ_API_TOKEN environment variable not set. Please set it in your .env file.")
-    
+        raise ValueError("IonQ API token not provided. Please configure it in executor settings or set IONQ_API_TOKEN environment variable.")
+
     # Initialize IonQ provider
     provider = IonQProvider(token=api_token)
     
@@ -50,19 +53,20 @@ def send_to_ionq(circuit: QuantumCircuit, shots: int = 1000, backend_name: str =
     
     return result
 
-def get_ionq_results(circuit: QuantumCircuit, shots: int = 1000, backend_name: str = "ionq_simulator", create_plot: bool = True, save_plot: str = None):
+def get_ionq_results(circuit: QuantumCircuit, shots: int = 1000, backend_name: str = "ionq_simulator", create_plot: bool = True, save_plot: str = None, api_token: str = None):
     """
     Get IonQ execution results and print them in a readable format.
-    
+
     Args:
         circuit: Qiskit QuantumCircuit object
         shots: Number of shots to run
         backend_name: IonQ backend to use
         create_plot: Whether to create a histogram visualization
         save_plot: Optional path to save the histogram (e.g., "histogram.png")
+        api_token: Optional user-provided API token (if None, uses environment variable)
     """
     try:
-        result = send_to_ionq(circuit, shots, backend_name)
+        result = send_to_ionq(circuit, shots, backend_name, api_token)
         
         # Get the counts from the result
         counts = result.get_counts()
