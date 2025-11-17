@@ -76,8 +76,8 @@ class _CircuitSectionState extends State<CircuitSection> {
 
   Future<void> _loadExecutorConfig() async {
     try {
-      final userId = await StoredUserInfo.getUserId();
-      if (userId == null) return;
+      final userId = StoredUserInfo.userID;
+      if (userId.isEmpty) return;
 
       final docSnapshot = await FirebaseFirestore.instance
           .collection('Users')

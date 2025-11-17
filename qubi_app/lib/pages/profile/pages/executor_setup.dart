@@ -43,8 +43,8 @@ class _ExecutorSetupPageState extends State<ExecutorSetupPage> {
 
   Future<void> _loadExecutorConfig() async {
     try {
-      final userId = await StoredUserInfo.getUserId();
-      if (userId == null) {
+      final userId = StoredUserInfo.userID;
+      if (userId.isEmpty) {
         setState(() => _isLoading = false);
         return;
       }
@@ -82,8 +82,8 @@ class _ExecutorSetupPageState extends State<ExecutorSetupPage> {
     setState(() => _isSaving = true);
 
     try {
-      final userId = await StoredUserInfo.getUserId();
-      if (userId == null) {
+      final userId = StoredUserInfo.userID;
+      if (userId.isEmpty) {
         throw Exception('User not logged in');
       }
 
