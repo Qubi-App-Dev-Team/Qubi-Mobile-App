@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:cloud_firestore/cloud_firestore.dart'; // 🔹 Added import
 import 'package:qubi_app/pages/profile/models/execution_model.dart';
+import 'package:qubi_app/pages/profile/models/executor_config.dart';
 import 'package:qubi_app/pages/home/executor.dart';
 import 'package:qubi_app/pages/story/story_page.dart';
 import 'package:qubi_app/pages/home/run.dart';
+import 'package:qubi_app/pages/profile/pages/executor_setup.dart';
 import 'package:qubi_app/api/api_client.dart';
 import 'package:qubi_app/user_bloc/stored_user_info.dart';
 
@@ -17,6 +19,9 @@ class CircuitSection extends StatefulWidget {
 
 class _CircuitSectionState extends State<CircuitSection> {
   bool _isSubmitting = false;
+  ExecutorConfig? _executorConfig;
+  String _selectedQuantumComputer = 'ionq_simulator';
+  int _selectedShots = 1000;
 
   // 🧩 Test circuit payload (temporary)
   final Map<String, dynamic> _testCircuit = const {
@@ -58,8 +63,40 @@ class _CircuitSectionState extends State<CircuitSection> {
     ),
   ];
 
-  static const String _quantumComputer = "ionq_simulator";
-  static const int _shots = 1000;
+  final List<Map<String, String>> _availableExecutors = [
+    {'value': 'ionq_simulator', 'label': 'IonQ Simulator'},
+    {'value': 'ibm_simulator', 'label': 'IBM Simulator'},
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadExecutorConfig();
+  }
+
+  Future<void> _loadExecutorConfig() async {
+    try {
+      final userId = await StoredUserInfo.getUserId();
+      if (userId == null) return;
+
+      final docSnapshot = await FirebaseFirestore.instance
+          .collection('Users')
+          .doc(userId)
+          .collection('settings')
+          .doc('executor_config')
+          .get();
+
+      if (docSnapshot.exists) {
+        setState(() {
+          _executorConfig = ExecutorConfig.fromJson(docSnapshot.data()!);
+          _selectedQuantumComputer = _executorConfig!.defaultExecutor;
+          _selectedShots = _executorConfig!.defaultShots;
+        });
+      }
+    } catch (e) {
+      // Silently fail and use default values
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -185,55 +222,116 @@ class _CircuitSectionState extends State<CircuitSection> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                "Select & Run",
-                style: TextStyle(color: Colors.white, fontSize: 16),
-              ),
-              const SizedBox(height: 6),
-
-              // Executor selector (unchanged)
-              GestureDetector(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const ExecutorPage()),
-                  );
-                },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 8,
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    "Select & Run",
+                    style: TextStyle(color: Colors.white, fontSize: 16),
                   ),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.bottomLeft,
-                      end: Alignment.topRight,
-                      colors: [
-                        Colors.black.withValues(alpha: .20),
-                        const Color(0xFFF7FAFC).withValues(alpha: .20),
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const ExecutorSetupPage(),
+                        ),
+                      ).then((_) => _loadExecutorConfig());
+                    },
+                    child: const Row(
+                      children: [
+                        Icon(Icons.settings, size: 16, color: Colors.white70),
+                        SizedBox(width: 4),
+                        Text(
+                          "Setup",
+                          style: TextStyle(
+                            color: Colors.white70,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
                       ],
                     ),
-                    borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        "IBM Hanoi (32 qubits)",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 14.5,
-                          fontWeight: FontWeight.w300,
-                        ),
-                      ),
-                      Icon(
-                        Icons.arrow_forward_ios,
-                        size: 16,
-                        color: Colors.white,
-                      ),
-                    ],
+                ],
+              ),
+              const SizedBox(height: 10),
+
+              // Quantum Computer Selector
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<String>(
+                    value: _selectedQuantumComputer,
+                    isExpanded: true,
+                    dropdownColor: const Color(0xFF6525FE),
+                    icon: const Icon(Icons.arrow_drop_down, color: Colors.white),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    items: _availableExecutors.map((executor) {
+                      return DropdownMenuItem<String>(
+                        value: executor['value'],
+                        child: Text(executor['label']!),
+                      );
+                    }).toList(),
+                    onChanged: (value) {
+                      setState(() => _selectedQuantumComputer = value!);
+                    },
                   ),
                 ),
+              ),
+
+              const SizedBox(height: 10),
+
+              // Shots Input
+              Row(
+                children: [
+                  const Text(
+                    "Shots:",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: TextField(
+                        style: const TextStyle(color: Colors.white),
+                        keyboardType: TextInputType.number,
+                        decoration: const InputDecoration(
+                          border: InputBorder.none,
+                          hintText: 'e.g., 1000',
+                          hintStyle: TextStyle(color: Colors.white54),
+                        ),
+                        controller: TextEditingController(
+                          text: _selectedShots.toString(),
+                        )..selection = TextSelection.fromPosition(
+                            TextPosition(offset: _selectedShots.toString().length),
+                          ),
+                        onChanged: (value) {
+                          final shots = int.tryParse(value);
+                          if (shots != null && shots > 0) {
+                            _selectedShots = shots;
+                          }
+                        },
+                      ),
+                    ),
+                  ),
+                ],
               ),
 
               const SizedBox(height: 10),
@@ -348,19 +446,33 @@ class _CircuitSectionState extends State<CircuitSection> {
     try {
       final userId = StoredUserInfo.userID;
 
-      // Call /make_request
+      // Prepare API keys if available
+      Map<String, String>? apiKeys;
+      if (_executorConfig != null) {
+        apiKeys = {};
+        if (_executorConfig!.ionqApiKey != null && _executorConfig!.ionqApiKey!.isNotEmpty) {
+          apiKeys['ionq'] = _executorConfig!.ionqApiKey!;
+        }
+        if (_executorConfig!.ibmApiKey != null && _executorConfig!.ibmApiKey!.isNotEmpty) {
+          apiKeys['ibm'] = _executorConfig!.ibmApiKey!;
+        }
+        if (apiKeys.isEmpty) apiKeys = null;
+      }
+
+      // Call /make_request with selected quantum computer, shots, and API keys
       final runRequestId = await ApiClient.makeRequest(
         userId: userId,
         circuit: _testCircuit,
-        quantumComputer: _quantumComputer,
-        shots: _shots,
+        quantumComputer: _selectedQuantumComputer,
+        shots: _selectedShots,
+        apiKeys: apiKeys,
       );
 
       if (!mounted) return;
 
       // ✅ Show snackbar only for an initial run (not returning to progress)
       messenger.showSnackBar(
-        SnackBar(content: Text("Circuit successfully sent to $_quantumComputer")),
+        SnackBar(content: Text("Circuit successfully sent to $_selectedQuantumComputer")),
       );
 
       Navigator.push(
@@ -368,8 +480,8 @@ class _CircuitSectionState extends State<CircuitSection> {
         MaterialPageRoute(
           builder: (_) => RunPage(
             runRequestId: runRequestId,
-            quantumComputer: _quantumComputer,
-            shots: _shots,
+            quantumComputer: _selectedQuantumComputer,
+            shots: _selectedShots,
           ),
         ),
       );

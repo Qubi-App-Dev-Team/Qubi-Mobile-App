@@ -25,15 +25,23 @@ class ApiClient {
     required Map<String, dynamic> circuit,
     String quantumComputer = 'ionq_simulator',
     int shots = 1000,
+    Map<String, String>? apiKeys,
   }) async {
     final url = Uri.parse('$_baseUrl/make_request');
 
-    final body = jsonEncode({
+    final bodyMap = {
       'user_id': userId,
       'circuit': circuit,
       'quantum_computer': quantumComputer,
       'shots': shots,
-    });
+    };
+
+    // Add API keys if provided
+    if (apiKeys != null && apiKeys.isNotEmpty) {
+      bodyMap['api_keys'] = apiKeys;
+    }
+
+    final body = jsonEncode(bodyMap);
 
     if (debug) {
       print('[ApiClient] → POST $url');
