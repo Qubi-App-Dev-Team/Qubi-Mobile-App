@@ -5,58 +5,24 @@
       "qubit": [0]
     },
     {
-      "name": "x",
-      "qubit": [0, 1]
-    },
-    {
       "name": "cx",
       "qubit": [1, 0]
     },
     {
-      "name": "x",
-      "qubit": [0, 1]
+      "name": "y",
+      "qubit": [1]
     },
-    {
-      "name": "h",
-      "qubit": [0, 1]
-    },
-        {
-      "name": "cx",
-      "qubit": [0, 1]
-    },
-        {
-      "name": "cx",
-      "qubit": [0, 1]
-    },
-        {
-      "name": "cx",
-      "qubit": [1, 0]
-    },
-        {
-      "name": "cx",
-      "qubit": [0, 1]
-    },
-        {
-      "name": "cx",
-      "qubit": [0, 1]
-    },
-        {
-      "name": "cx",
-      "qubit": [0, 1]
-    },
-        {
-      "name": "cx",
-      "qubit": [0, 1]
-    },
-        {
-      "name": "cx",
-      "qubit": [0, 1]
-    },
-
-    
     {
       "name": "cz",
-      "qubit": [1, 0]
+      "qubit": [0, 1]
+    },
+    {
+      "name": "x",
+      "qubit": [1]
+    },
+    {
+      "name": "t",
+      "qubit": [0]
     }
   ],
   "name": "anewcircuit",

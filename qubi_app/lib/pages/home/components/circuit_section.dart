@@ -273,7 +273,7 @@ Future<List<Gate>> loadCircuit() async {
                         "Run Pending Circuit",
                         style: TextStyle(
                           color: Colors.white,
-                          fontSize: 14.5,
+                          fontSize: 17.5,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
