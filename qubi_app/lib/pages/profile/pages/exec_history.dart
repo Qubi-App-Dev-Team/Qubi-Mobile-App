@@ -177,6 +177,9 @@ class _ExecHistoryPageState extends State<ExecHistoryPage> {
     final Color badgeColor =
         isSimulator ? AppColors.emberOrange : AppColors.ionGreen;
     final String badgeText = isSimulator ? "Simulated" : "Real";
+    final bool isSuccess = exec.success ?? true; // treat null as success for old data
+    final String statusText = isSuccess ? "Success" : "Failed";
+    final Color statusColor = isSuccess ? Colors.green : Colors.red;
 
     return GestureDetector(
       onTap: () {
@@ -235,22 +238,43 @@ class _ExecHistoryPageState extends State<ExecHistoryPage> {
                 ],
               ),
             ),
-            Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: badgeColor.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                badgeText,
-                style: TextStyle(
-                  color: badgeColor,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 13,
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: badgeColor.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    badgeText,
+                    style: TextStyle(
+                      color: badgeColor,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                    ),
+                  ),
                 ),
-              ),
+                const SizedBox(height: 6),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: statusColor.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    statusText,
+                    style: TextStyle(
+                      color: statusColor,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+              ],
             ),
+
           ],
         ),
       ),
