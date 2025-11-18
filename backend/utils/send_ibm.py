@@ -7,33 +7,32 @@ import matplotlib.pyplot as plt
 
 load_dotenv()
 
-def send_to_ibm(circuit: QuantumCircuit, shots: int = 1000, backend_name: str = "ibmq_qasm_simulator"):
+def send_to_ibm(circuit: QuantumCircuit, shots: int = 1000, backend_name: str = "ibmq_qasm_simulator", api_token: str = None):
     """
     Send a quantum circuit to IBM Quantum for execution.
-    
+
     Args:
         circuit: Qiskit QuantumCircuit object
         shots: Number of shots to run (default: 1000)
         backend_name: IBM backend name (default: "ibmq_qasm_simulator")
-    
+        api_token: Optional user-provided API token (if None, uses environment variable)
+
     Returns:
         Job result from IBM
     """
-
-        # Save your credentials (one-time setup)
-    try:
+    # Get IBM API token from user input or environment variable
+    if api_token is None:
         api_token = os.getenv("IBM_API_TOKEN")
-        if not api_token:
-            raise Exception("IBM_API_TOKEN environment variable not set. Please set it in your .env file.")
-        
-        QiskitRuntimeService.save_account(channel="ibm_quantum_platform", token=api_token)
-        print("Account saved successfully!")
-        
-    except AccountAlreadyExistsError as e:
-        print("Account already exists. Skipping save.")
-        pass
+
+    if not api_token:
+        raise ValueError("IBM API token not provided. Please configure it in executor settings or set IBM_API_TOKEN environment variable.")
+
+    # Save or update credentials
+    try:
+        QiskitRuntimeService.save_account(channel="ibm_quantum_platform", token=api_token, overwrite=True)
+        print("IBM account configured successfully!")
     except Exception as e:
-        print(f"Error: {e}")
+        print(f"Note: {e}")
 
     # Connect to IBM Quantum
     service = QiskitRuntimeService(channel="ibm_quantum_platform")
@@ -58,12 +57,20 @@ def send_to_ibm(circuit: QuantumCircuit, shots: int = 1000, backend_name: str = 
     return result
 
 
-def get_ibm_results(circuit: QuantumCircuit, shots: int = 1000, backend_name: str = "ibmq_qasm_simulator", create_plot: bool = True, save_plot: str = None):
+def get_ibm_results(circuit: QuantumCircuit, shots: int = 1000, backend_name: str = "ibmq_qasm_simulator", create_plot: bool = True, save_plot: str = None, api_token: str = None):
     """
     Get IBM Quantum execution results and visualize them.
+
+    Args:
+        circuit: Qiskit QuantumCircuit object
+        shots: Number of shots to run
+        backend_name: IBM backend name
+        create_plot: Whether to create a histogram visualization
+        save_plot: Optional path to save the histogram
+        api_token: Optional user-provided API token (if None, uses environment variable)
     """
     try:
-        result = send_to_ibm(circuit, shots, backend_name)
+        result = send_to_ibm(circuit, shots, backend_name, api_token)
         
         # ← CHANGE THIS SECTION - Extract counts properly
         pub_result = result[0]

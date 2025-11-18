@@ -1,138 +1,137 @@
 import os
-import warnings
 from dotenv import load_dotenv
-
-from qiskit import QuantumCircuit
-from qiskit_ionq import IonQProvider
-from qiskit_ionq.exceptions import IonQTranspileLevelWarning
-
-import matplotlib
-matplotlib.use('Agg')  # Use non-GUI backend
+from qiskit import QuantumCircuit, transpile
+from qiskit_ibm_runtime import QiskitRuntimeService, SamplerV2 as Sampler, Session, EstimatorV2 as Estimator
+from qiskit_ibm_runtime.accounts.exceptions import AccountAlreadyExistsError
 import matplotlib.pyplot as plt
 
 load_dotenv()
 
-# Suppress IonQ transpiler optimization level warning
-warnings.filterwarnings('ignore', category=IonQTranspileLevelWarning)
-
-def send_to_ionq(circuit: QuantumCircuit, shots: int = 1000, backend_name: str = "ionq_simulator"):
+def send_to_ibm(circuit: QuantumCircuit, shots: int = 1000, backend_name: str = "ibmq_qasm_simulator", api_token: str = None):
     """
-    Send a quantum circuit to IonQ for execution.
-    
+    Send a quantum circuit to IBM Quantum for execution.
+
     Args:
         circuit: Qiskit QuantumCircuit object
         shots: Number of shots to run (default: 1000)
-        backend_name: IonQ backend to use (default: "ionq_simulator")
-                     Options: "ionq_simulator", "ionq_qpu"
-    
+        backend_name: IBM backend name (default: "ibmq_qasm_simulator")
+        api_token: Optional user-provided API token (if None, uses environment variable)
+
     Returns:
-        Job result from IonQ
+        Job result from IBM
     """
-    # Get IonQ API token from environment variable
-    api_token = os.getenv('IONQ_API_TOKEN')
+    # Get IBM API token from user input or environment variable
+    if api_token is None:
+        api_token = os.getenv("IBM_API_TOKEN")
+
     if not api_token:
-        raise ValueError("IONQ_API_TOKEN environment variable not set. Please set it in your .env file.")
-    
-    # Initialize IonQ provider
-    provider = IonQProvider(token=api_token)
-    
-    # Get the specified backend
-    backend = provider.get_backend(backend_name)
-    
-    # Submit job directly to the backend
-    job = backend.run(circuit, shots=shots)
-    
-    print(f"Job submitted to IonQ {backend_name}")
-    print(f"Job ID: {job.job_id()}")
-    
-    # Wait for job to complete and get results
+        raise ValueError("IBM API token not provided. Please configure it in executor settings or set IBM_API_TOKEN environment variable.")
+
+    # Save or update credentials
+    try:
+        QiskitRuntimeService.save_account(channel="ibm_quantum_platform", token=api_token, overwrite=True)
+        print("IBM account configured successfully!")
+    except Exception as e:
+        print(f"Note: {e}")
+
+    # Connect to IBM Quantum
+    service = QiskitRuntimeService(channel="ibm_quantum_platform")
+
+    # Get a backend
+    backend = service.least_busy(operational=True, simulator=False)
+    print(f"\nUsing backend: {backend.name}")
+
+    # IMPORTANT: Transpile the circuit for the target backend
+    transpiled_qc = transpile(circuit, backend=backend, optimization_level=3)
+    print(f"\nTranspiled circuit (optimized for {backend.name}):")
+
+    sampler = Sampler(backend)
+    job = sampler.run([transpiled_qc])
+    print(f"\nJob submitted! Job ID: {job.job_id()}")
+
+    # Wait for results
+    print("Waiting for results...")
     result = job.result()
-    
+    print(f"\nResults: {result}")
+
     return result
 
-def get_ionq_results(circuit: QuantumCircuit, shots: int = 1000, backend_name: str = "ionq_simulator", create_plot: bool = True, save_plot: str = None):
+
+def get_ibm_results(circuit: QuantumCircuit, shots: int = 1000, backend_name: str = "ibmq_qasm_simulator", create_plot: bool = True, save_plot: str = None, api_token: str = None):
     """
-    Get IonQ execution results and print them in a readable format.
-    
+    Get IBM Quantum execution results and visualize them.
+
     Args:
         circuit: Qiskit QuantumCircuit object
         shots: Number of shots to run
-        backend_name: IonQ backend to use
+        backend_name: IBM backend name
         create_plot: Whether to create a histogram visualization
-        save_plot: Optional path to save the histogram (e.g., "histogram.png")
+        save_plot: Optional path to save the histogram
+        api_token: Optional user-provided API token (if None, uses environment variable)
     """
     try:
-        result = send_to_ionq(circuit, shots, backend_name)
+        result = send_to_ibm(circuit, shots, backend_name, api_token)
         
-        # Get the counts from the result
-        counts = result.get_counts()
+        # ← CHANGE THIS SECTION - Extract counts properly
+        pub_result = result[0]
+        data = pub_result.data
         
-        print(f"\nResults from IonQ {backend_name} ({shots} shots):")
+        # Try to get counts from the correct classical register
+        # Check your circuit's classical register name first
+        if hasattr(data, 'c'):
+            counts = data.c.get_counts()
+        elif hasattr(data, 'meas'):
+            counts = data.meas.get_counts()
+        else:
+            # Fallback: find the first valid measurement data
+            for attr_name in dir(data):
+                if not attr_name.startswith('_'):
+                    attr = getattr(data, attr_name)
+                    if hasattr(attr, 'get_counts'):
+                        counts = attr.get_counts()
+                        print(f"Using classical register: {attr_name}")
+                        break
+        
+        print(f"\nResults from IBM {backend_name} ({shots} shots):")
         print("=" * 50)
-        
-        # Print results in binary format
         for state, count in counts.items():
-            probability = count / shots
-            print(f"|{state}⟩: {probability:.4f} ({count} counts)")
+            prob = count / shots
+            print(f"|{state}⟩: {prob:.4f} ({count} counts)")
         
-        # Create histogram if requested
         if create_plot:
-            print(f"\nCreating histogram visualization...")
+            print("\nCreating histogram visualization...")
             create_histogram(counts, shots, 
-                           title=f"IonQ {backend_name} Results", 
+                           title=f"IBM {backend_name} Results", 
                            save_path=save_plot)
         
         return result
-        
+    
     except Exception as e:
-        print(f"Error sending circuit to IonQ: {e}")
+        print(f"Error sending circuit to IBM Quantum: {e}")
+        import traceback
+        traceback.print_exc()  # ← ADD this for better error debugging
         return None
 
+
 def create_histogram(counts, shots, title="Quantum Measurement Results", save_path=None):
-    """
-    Create a histogram visualization of quantum measurement results.
-    
-    Args:
-        counts: Dictionary of measurement counts from IonQ result
-        shots: Total number of shots
-        title: Title for the histogram
-        save_path: Optional path to save the plot (e.g., "histogram.png")
-    
-    Returns:
-        matplotlib figure object
-    """
-    # Convert hex states to binary for better readability
-    binary_states = {}
-    for hex_state, count in counts.items():
-        int_state = int(hex_state, 16)
-        # Determine number of qubits from the largest state
-        max_state = max(int(hex_state, 16) for hex_state in counts.keys())
-        num_qubits = max_state.bit_length() if max_state > 0 else 1
-        binary_state = format(int_state, f'0{num_qubits}b')
-        binary_states[binary_state] = count
-    
-    # Prepare data for plotting
-    states = list(binary_states.keys())
-    counts_list = list(binary_states.values())
+    """Same as your IonQ version — reused for IBM results."""
+    states = list(counts.keys())
+    counts_list = list(counts.values())
     probabilities = [count / shots for count in counts_list]
     
-    # Create the histogram
     fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 8))
     
-    # Bar chart for counts
     bars1 = ax1.bar(states, counts_list, color='skyblue', alpha=0.7, edgecolor='navy')
     ax1.set_xlabel('Quantum States')
     ax1.set_ylabel('Counts')
     ax1.set_title(f'{title} - Counts (Total Shots: {shots})')
     ax1.grid(True, alpha=0.3)
     
-    # Add count labels on bars
     for bar, count in zip(bars1, counts_list):
         height = bar.get_height()
         ax1.text(bar.get_x() + bar.get_width()/2., height + shots*0.01,
                 f'{count}', ha='center', va='bottom', fontweight='bold')
     
-    # Bar chart for probabilities
     bars2 = ax2.bar(states, probabilities, color='lightcoral', alpha=0.7, edgecolor='darkred')
     ax2.set_xlabel('Quantum States')
     ax2.set_ylabel('Probability')
@@ -140,29 +139,24 @@ def create_histogram(counts, shots, title="Quantum Measurement Results", save_pa
     ax2.grid(True, alpha=0.3)
     ax2.set_ylim(0, max(probabilities) * 1.1)
     
-    # Add probability labels on bars
     for bar, prob in zip(bars2, probabilities):
         height = bar.get_height()
         ax2.text(bar.get_x() + bar.get_width()/2., height + max(probabilities)*0.01,
                 f'{prob:.3f}', ha='center', va='bottom', fontweight='bold')
     
-    # Rotate x-axis labels for better readability
     for ax in [ax1, ax2]:
         ax.tick_params(axis='x', rotation=45)
     
     plt.tight_layout()
     
-    # Save if path provided
     if save_path:
         plt.savefig(save_path, dpi=300, bbox_inches='tight')
         print(f"Histogram saved to: {save_path}")
-
-    plt.close(fig)
-
+    
+    plt.show()
     return fig
 
 def print_circuit_info(circuit: QuantumCircuit):
-    """Print information about the circuit before sending to IonQ."""
     print(f"Circuit Information:")
     print(f"  Number of qubits: {circuit.num_qubits}")
     print(f"  Number of classical bits: {circuit.num_clbits}")
@@ -171,4 +165,3 @@ def print_circuit_info(circuit: QuantumCircuit):
     print(f"  Circuit:")
     print(circuit.draw(output='text'))
     print()
-

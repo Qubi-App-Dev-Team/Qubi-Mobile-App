@@ -51,3 +51,33 @@ def add_results(run_request_id, user_id, circuit_id, elapsed_time, shots, result
         print(f"[Firestore] Warning: failed to clear current_run_request_id for user {user_id}: {e}")
 
     return run_request_id
+
+def add_error_result(run_request_id, user_id, circuit_id, elapsed_time, shots, quantum_computer, error_message):
+    """
+    Add error result to the 'run_results' collection when execution fails.
+    """
+    runs_ref = db.collection('run_results').document(run_request_id)
+
+    data = {
+        "success": False,
+        "circuit_id": circuit_id,
+        "user_id": user_id,
+        "quantum_computer": quantum_computer,
+        "error_message": error_message,
+        "histogram_counts": {},
+        "histogram_probabilities": {},
+        "shots": shots,
+        "elapsed_time_s": elapsed_time,
+        "created_at": firestore.SERVER_TIMESTAMP
+    }
+    runs_ref.set(data)
+
+    try:
+        db.collection('Users').document(user_id).update({
+            'current_run_request_id': firestore.DELETE_FIELD
+        })
+        print(f"[Firestore] Cleared current_run_request_id for user {user_id}")
+    except Exception as e:
+        print(f"[Firestore] Warning: failed to clear current_run_request_id for user {user_id}: {e}")
+
+    return run_request_id
