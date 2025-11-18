@@ -25,6 +25,7 @@ from helpers import (
 st.set_page_config(page_title="Qubi Learn Content Editor", layout="wide")
 
 # ---- Session state initialization ----
+# Ensures information is stored across all pages and reruns
 
 if "view" not in st.session_state:
     st.session_state["view"] = "chapters"  # "chapters" or "editor"
