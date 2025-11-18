@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:qubi_app/pages/profile/models/execution.dart';
 import 'package:qubi_app/pages/home/executor.dart';
 import 'package:qubi_app/pages/story/story_page.dart';
@@ -11,12 +10,18 @@ import 'package:flutter/services.dart' show rootBundle;
 class CircuitSection extends StatelessWidget {
   const CircuitSection({super.key});
 
-  Future<List<Gate>> loadCircuit() async {
-    final data = await rootBundle.loadString('assets/circuit.json');
-    final jsonData = json.decode(data);
-    List gates = jsonData['gates'];
-    return gates.map((g) => Gate.fromJson(g)).toList();
-  }
+Future<List<Gate>> loadCircuit() async {
+  final data = await rootBundle.loadString('assets/circuit.json');
+  final jsonData = json.decode(data);
+
+  List<Map<String, dynamic>> gates =
+      List<Map<String, dynamic>>.from(jsonData['gates']);
+
+  return List<Gate>.generate(
+    gates.length,
+    (i) => Gate.fromJson(gates[i], i),
+  );
+}
 
   @override
   Widget build(BuildContext context) {
@@ -131,49 +136,35 @@ class CircuitSection extends StatelessWidget {
                   color: Colors.black,
                 ),
               ),
-              Text(
-                'View all >',
-                style: TextStyle(fontSize: 15, color: Colors.black54),
-              ),
+              // Text(
+              //   'View all >',
+              //   style: TextStyle(fontSize: 15, color: Colors.black54),
+              // ),
             ],
           ),
         ),
 
-        // 🔹 Circuit SVG image
+        // Circuit SVG image
         FutureBuilder<List<Gate>>(
           future: loadCircuit(),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Padding(
-                padding: EdgeInsets.all(16),
-                child: Center(child: CircularProgressIndicator()),
-              );
-            } else if (snapshot.hasError) {
-              return Padding(
-                padding: const EdgeInsets.all(16),
-                child: Text(
-                  'Error loading circuit: ${snapshot.error}',
-                  style: const TextStyle(color: Colors.red),
-                ),
-              );
-            } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-              return const Padding(
-                padding: EdgeInsets.all(16),
-                child: Text('No circuit data found'),
-              );
+              return const Center(child: CircularProgressIndicator());
             }
 
-            // ✅ Render the dynamic circuit widget
-            return Padding(
+            if (snapshot.hasError) {
+              return Text('Error: ${snapshot.error}', style: TextStyle(color: Colors.red));
+            }
+
+            final gates = snapshot.data;
+            if (gates == null || gates.isEmpty) {
+              return const Text('No circuit data found');
+            }
+
+            return SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: CircuitView(
-                  gates: snapshot.data!,
-                  numPositions: 10,  // adjust grid length
-                  gridSpacing: 80,   // spacing between positions
-                ),
-              ),
+              child: CircuitView(gates: gates),
             );
           },
         ),

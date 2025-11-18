@@ -40,10 +40,8 @@ flutter:
     - assets/fonts/   # not required for fonts to work, but harmless
     - assets/icons/
     - assets/circuit.json
-    - assets/gates/H.png
-    - assets/gates/CNOT.png
-    - assets/gates/X.png
-
+    - assets/gates/
+    
   fonts:
     - family: Strawford
       fonts:
