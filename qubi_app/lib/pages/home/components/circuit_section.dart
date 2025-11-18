@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:cloud_firestore/cloud_firestore.dart'; // 🔹 Added import
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:shimmer/shimmer.dart';
 import 'package:qubi_app/pages/profile/models/execution_model.dart';
 import 'package:qubi_app/pages/home/executor.dart';
 import 'package:qubi_app/pages/story/story_page.dart';
@@ -17,8 +18,65 @@ class CircuitSection extends StatefulWidget {
 
 class _CircuitSectionState extends State<CircuitSection> {
   bool _isSubmitting = false;
+  DateTime? _shakeLoadStart;
+  int _minShimmerMs = 1800; // 1.8 seconds minimum
+  ExecutionModel? _lastShake;
+  bool _requestedLastShake = false;
+  bool _loadingLastShake = true;
 
-  // 🧩 Test circuit payload (temporary)
+  @override
+  void initState() {
+    super.initState();
+    _loadLastShake();
+  }
+  /*
+  Future<void> _loadLastShake() async {
+    try {
+      setState(() => _loadingLastShake = true);
+
+      final result = await ApiClient.fetchLastShake();
+      if (!mounted) return;
+      setState(() {
+        _lastShake = result;
+        _loadingLastShake = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      print("[CircuitSection] Failed to load last shake: $e");
+      setState(() => _loadingLastShake = false);
+    }
+  }*/
+
+  Future<void> _loadLastShake() async {
+    try {
+      _shakeLoadStart = DateTime.now();
+      setState(() => _loadingLastShake = true);
+
+      final result = await ApiClient.fetchLastShake();
+      if (!mounted) return;
+
+      final elapsed = DateTime.now().difference(_shakeLoadStart!).inMilliseconds;
+      final remaining = _minShimmerMs - elapsed;
+
+      if (remaining > 0) {
+        await Future.delayed(Duration(milliseconds: remaining));
+      }
+
+      if (!mounted) return;
+
+      setState(() {
+        _lastShake = result;
+        _loadingLastShake = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      print("[CircuitSection] Failed to load last shake: $e");
+
+      setState(() => _loadingLastShake = false);
+    }
+  }
+
+
   final Map<String, dynamic> _testCircuit = const {
     "gates": [
       {"name": "h", "qubits": [0]},
@@ -29,101 +87,99 @@ class _CircuitSectionState extends State<CircuitSection> {
     "num_clbits": 2,
   };
 
-  final List<ExecutionModel> executionData = [
-    ExecutionModel(
-      userId: "user_01",
-      circuitId:
-          "abe6d955a212c337fa16498d5a378782330be5dc65e1bbc404a41f87383f3119",
-      quantumComputer: "IBM",
-      histogramCounts: {"00": 563, "01": 242, "10": 193, "11": 437},
-      histogramProbabilities: {
-        "00": 0.563,
-        "01": 0.242,
-        "10": 0.193,
-        "11": 0.437,
-      },
-      elapsedTimeS: 9.43,
-      shots: 1000,
-      success: true,
-    ),
-    ExecutionModel(
-      userId: "user_01",
-      circuitId: "ionq_002",
-      quantumComputer: "IonQ",
-      histogramCounts: {"0": 112, "1": 88},
-      histogramProbabilities: {"0": 0.56, "1": 0.44},
-      elapsedTimeS: 2.12,
-      shots: 200,
-      success: true,
-    ),
-  ];
-
   static const String _quantumComputer = "ionq_simulator";
   static const int _shots = 1000;
+
+  // -------------------------------------------------------------------------
+  // TOP CARD WITH SHIMMER (ONLY PLACE WHERE UI IS MODIFIED)
+  // -------------------------------------------------------------------------
+  Widget _buildTopCard() {
+    final content = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          _loadingLastShake
+              ? "Loading last shake..."
+              : _lastShake == null
+                  ? "No shakes yet"
+                  : "Last shake - ${_lastShake!.quantumComputer}",
+          style: const TextStyle(color: Colors.white, fontSize: 16),
+        ),
+        const SizedBox(height: 6),
+
+        Row(
+          mainAxisAlignment: MainAxisAlignment.start,
+          children: [
+            GestureDetector(
+              onTap: _lastShake == null
+                  ? null
+                  : () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => RunPage(execution: _lastShake!),
+                        ),
+                      );
+                    },
+              child: buildGradientButton(
+                _lastShake == null ? "No report" : "Read Report",
+                true,
+              ),
+            ),
+            const SizedBox(width: 12),
+            GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const StoryPage()),
+                );
+              },
+              child: buildGradientButton("Skip to Story", false),
+            ),
+          ],
+        ),
+      ],
+    );
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
+      padding: const EdgeInsets.all(12),
+      width: double.infinity,
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.bottomLeft,
+          end: Alignment.topRight,
+          colors: [Color(0xFF6525FE), Color(0xFFF25F1C)],
+        ),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.10),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+
+      // ✨ SHIMMER ONLY WHEN LOADING
+      child: _loadingLastShake
+          ? Shimmer.fromColors(
+              baseColor: Colors.white.withOpacity(0.8),
+              highlightColor: Colors.white.withOpacity(1),
+              child: content,
+            )
+          : content,
+    );
+  }
+
+  // -------------------------------------------------------------------------
 
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
-        // 🔹 Top gradient container (unchanged)
-        Container(
-          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
-          padding: const EdgeInsets.all(12),
-          width: double.infinity,
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              begin: Alignment.bottomLeft,
-              end: Alignment.topRight,
-              colors: [Color(0xFF6525FE), Color(0xFFF25F1C)],
-            ),
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.10),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                "Last shake - IBM Hanoi (32 qubits)",
-                style: TextStyle(color: Colors.white, fontSize: 16),
-              ),
-              const SizedBox(height: 6),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.start,
-                children: [
-                  GestureDetector(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => RunPage(execution: executionData[0]),
-                        ),
-                      );
-                    },
-                    child: buildGradientButton("Read Report", true),
-                  ),
-                  const SizedBox(width: 12),
-                  GestureDetector(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const StoryPage()),
-                      );
-                    },
-                    child: buildGradientButton("Skip to Story", false),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
+        _buildTopCard(),
 
-        // 🔹 Pending circuit header (unchanged)
         Container(
           margin: const EdgeInsets.only(
             left: 16,
@@ -150,7 +206,6 @@ class _CircuitSectionState extends State<CircuitSection> {
           ),
         ),
 
-        // 🔹 Circuit SVG image (unchanged)
         Container(
           margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
           width: double.infinity,
@@ -162,7 +217,7 @@ class _CircuitSectionState extends State<CircuitSection> {
           ),
         ),
 
-        // 🔹 Bottom gradient container (modified ONLY inside this block)
+        // ---------------- BOTTOM CARD (UNCHANGED) ----------------
         Container(
           margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
           padding: const EdgeInsets.all(12),
@@ -191,7 +246,6 @@ class _CircuitSectionState extends State<CircuitSection> {
               ),
               const SizedBox(height: 6),
 
-              // Executor selector (unchanged)
               GestureDetector(
                 onTap: () {
                   Navigator.push(
@@ -200,10 +254,8 @@ class _CircuitSectionState extends State<CircuitSection> {
                   );
                 },
                 child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 8,
-                  ),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       begin: Alignment.bottomLeft,
@@ -226,11 +278,8 @@ class _CircuitSectionState extends State<CircuitSection> {
                           fontWeight: FontWeight.w300,
                         ),
                       ),
-                      Icon(
-                        Icons.arrow_forward_ios,
-                        size: 16,
-                        color: Colors.white,
-                      ),
+                      Icon(Icons.arrow_forward_ios,
+                          size: 16, color: Colors.white),
                     ],
                   ),
                 ),
@@ -238,24 +287,37 @@ class _CircuitSectionState extends State<CircuitSection> {
 
               const SizedBox(height: 10),
 
-              // 🔸 🔹 ONLY THIS PART BELOW IS NEW 🔹 🔸
-              StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+              StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
                 stream: FirebaseFirestore.instance
-                    .collection('Users')
-                    .doc(StoredUserInfo.userID)
+                    .collection('run_requests')
+                    .where('user_id', isEqualTo: StoredUserInfo.userID)
+                    .where('status', whereIn: ['PENDING', 'RUNNING'])
+                    .limit(1)
                     .snapshots(),
                 builder: (context, snapshot) {
-                  final userData = snapshot.data?.data();
-                  final currentRunId = userData?['current_run_request_id'];
+                  final docs = snapshot.data?.docs ?? [];
 
-                  // CASE 1 → Run in progress
-                  if (currentRunId != null) {
+                  if (docs.isEmpty) {
+                    if (!_requestedLastShake) {
+                      _requestedLastShake = true;
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        _loadLastShake();
+                      });
+                    }
+                  } else {
+                    _requestedLastShake = false;
+                  }
+
+                  if (docs.isNotEmpty) {
+                    final runRequestId = docs.first.id;
+
                     return GestureDetector(
                       onTap: () {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (_) => RunPage(runRequestId: currentRunId),
+                            builder: (_) =>
+                                RunPage(runRequestId: runRequestId),
                           ),
                         );
                       },
@@ -281,18 +343,14 @@ class _CircuitSectionState extends State<CircuitSection> {
                                 fontWeight: FontWeight.w700,
                               ),
                             ),
-                            Icon(
-                              Icons.play_arrow_rounded,
-                              size: 20,
-                              color: Colors.white,
-                            ),
+                            Icon(Icons.play_arrow_rounded,
+                                size: 20, color: Colors.white),
                           ],
                         ),
                       ),
                     );
                   }
 
-                  // CASE 2 → No run in progress (default behavior)
                   return GestureDetector(
                     onTap: _isSubmitting ? null : _onRunPendingCircuit,
                     child: Opacity(
@@ -313,7 +371,7 @@ class _CircuitSectionState extends State<CircuitSection> {
                           children: [
                             Text(
                               _isSubmitting
-                                  ? "Starting run..."
+                                  ? "Starting..."
                                   : "Run Pending Circuit",
                               style: const TextStyle(
                                 color: Colors.white,
@@ -321,11 +379,8 @@ class _CircuitSectionState extends State<CircuitSection> {
                                 fontWeight: FontWeight.w700,
                               ),
                             ),
-                            const Icon(
-                              Icons.play_arrow_rounded,
-                              size: 20,
-                              color: Colors.white,
-                            ),
+                            const Icon(Icons.play_arrow_rounded,
+                                size: 20, color: Colors.white),
                           ],
                         ),
                       ),
@@ -333,7 +388,6 @@ class _CircuitSectionState extends State<CircuitSection> {
                   );
                 },
               ),
-              // 🔸 🔹 END OF NEW CODE 🔹 🔸
             ],
           ),
         ),
@@ -348,7 +402,6 @@ class _CircuitSectionState extends State<CircuitSection> {
     try {
       final userId = StoredUserInfo.userID;
 
-      // Call /make_request
       final runRequestId = await ApiClient.makeRequest(
         userId: userId,
         circuit: _testCircuit,
@@ -358,7 +411,6 @@ class _CircuitSectionState extends State<CircuitSection> {
 
       if (!mounted) return;
 
-      // ✅ Show snackbar only for an initial run (not returning to progress)
       messenger.showSnackBar(
         SnackBar(content: Text("Circuit successfully sent to $_quantumComputer")),
       );
@@ -383,16 +435,14 @@ class _CircuitSectionState extends State<CircuitSection> {
     }
   }
 
-  // 🔹 Button builder helper (unchanged)
   Widget buildGradientButton(String label, bool outlined) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 3),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(30),
         border: outlined ? Border.all(color: Colors.white, width: 1.5) : null,
-        color: outlined
-            ? Colors.transparent
-            : Colors.white.withValues(alpha: 0.2),
+        color:
+            outlined ? Colors.transparent : Colors.white.withValues(alpha: 0.2),
       ),
       child: Row(
         children: [
