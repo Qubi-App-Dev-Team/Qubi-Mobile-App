@@ -21,6 +21,10 @@
       "qubit": [1]
     },
     {
+      "name": "t*",
+      "qubit": [1]
+    },
+    {
       "name": "t",
       "qubit": [0]
     }

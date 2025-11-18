@@ -89,14 +89,21 @@ class CircuitView extends StatelessWidget {
 
       case "y":
         return const LinearGradient(
-          colors: [AppColors.emberOrange, AppColors.helioYellow],
+          colors: [AppColors.quantumPink, AppColors.electricIndigo],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         );
 
       case "t":
         return const LinearGradient(
-          colors: [AppColors.quantumPink, AppColors.electricIndigo],
+          colors: [AppColors.emberOrange, AppColors.helioYellow],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        );
+
+      case "t*":
+        return const LinearGradient(
+          colors: [AppColors.helioYellow, AppColors.emberOrange],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         );
