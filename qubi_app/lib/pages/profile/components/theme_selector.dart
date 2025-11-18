@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:qubi_app/assets/app_colors.dart';
+import 'package:qubi_app/components/app_colors.dart';
 
 class ThemeSelector extends StatefulWidget {
   final int selectedIndex;

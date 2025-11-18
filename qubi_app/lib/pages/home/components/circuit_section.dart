@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:qubi_app/pages/profile/models/execution.dart';
 import 'package:qubi_app/pages/home/executor.dart';
 import 'package:qubi_app/pages/story/story_page.dart';
@@ -7,6 +6,7 @@ import 'package:qubi_app/pages/home/run.dart';
 import 'package:qubi_app/pages/home/components/dynamic_circuit.dart';
 import 'dart:convert';
 import 'package:flutter/services.dart' show rootBundle;
+import 'package:qubi_app/pages/home/components/loading_dialog.dart';
 
 class CircuitSection extends StatelessWidget {
   const CircuitSection({super.key});
@@ -21,32 +21,50 @@ class CircuitSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Sample executions — replace later with live backend data.
+
     final List<Execution> executionData = [
       Execution(
-        message: true,
-        circuitId:
-            "abe6d955a212c337fa16498d5a378782330be5dc65e1bbc404a41f87383f3119",
-        runId: "Qv6DySvo3mjfiQLHkf8B",
-        quantumComputer: "IBM",
-        histogramCounts: {"00": 563, "01": 242, "10": 193, "11": 437},
+        success: true,
+        status: "completed",
+        circuitId: "test_circuit_001",
+        quantumComputer: "ibm_hanoi",
+        histogramCounts: {"00": 520, "01": 210, "10": 155, "11": 115},
         histogramProbabilities: {
-          "00": 0.563,
-          "01": 0.242,
-          "10": 0.193,
-          "11": 0.437,
+          "00": 0.52,
+          "01": 0.21,
+          "10": 0.155,
+          "11": 0.115,
         },
-        time: 9.43,
+        time: 8.92,
         shots: 1000,
+        createdAt: "2025-01-01T12:00:00Z",
+        userId: "test_user_123",
       ),
+
       Execution(
-        message: true,
-        circuitId: "ionq_002",
-        runId: "IonQxG7DaA",
-        quantumComputer: "IonQ",
-        histogramCounts: {"0": 112, "1": 88},
-        histogramProbabilities: {"0": 0.56, "1": 0.44},
-        time: 2.12,
+        success: true,
+        status: "completed",
+        circuitId: "test_circuit_002",
+        quantumComputer: "ionq_aria",
+        histogramCounts: {"0": 113, "1": 87},
+        histogramProbabilities: {"0": 0.565, "1": 0.435},
+        time: 2.15,
         shots: 200,
+        createdAt: "2025-01-02T16:30:00Z",
+        userId: "test_user_123",
+      ),
+
+      Execution(
+        success: false,
+        status: "failed",
+        circuitId: "test_circuit_003",
+        quantumComputer: "simulator_qasm",
+        histogramCounts: {},
+        histogramProbabilities: {},
+        time: 0.0,
+        shots: 0,
+        createdAt: "2025-01-03T08:42:00Z",
+        userId: null,
       ),
     ];
 
@@ -83,7 +101,6 @@ class CircuitSection extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.start,
                 children: [
-                  // "Read Report" → RunPage (with full model)
                   GestureDetector(
                     onTap: () {
                       Navigator.push(
@@ -96,7 +113,6 @@ class CircuitSection extends StatelessWidget {
                     child: buildGradientButton("Read Report", true),
                   ),
                   const SizedBox(width: 12),
-                  // "Skip to Story"
                   GestureDetector(
                     onTap: () {
                       Navigator.push(
@@ -163,15 +179,17 @@ class CircuitSection extends StatelessWidget {
               );
             }
 
-            // ✅ Render the dynamic circuit widget
             return Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: CircuitView(
-                  gates: snapshot.data!,
-                  numPositions: 10,  // adjust grid length
-                  gridSpacing: 80,   // spacing between positions
+              child: SizedBox(
+                height: 200, // <-- NEW: ensures the colored circuit fits
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: CircuitView(
+                    gates: snapshot.data!,
+                    numPositions: 12,
+                    gridSpacing: 80,
+                  ),
                 ),
               ),
             );
@@ -206,6 +224,8 @@ class CircuitSection extends StatelessWidget {
                 style: TextStyle(color: Colors.white, fontSize: 16),
               ),
               const SizedBox(height: 6),
+
+              // Executor selector
               GestureDetector(
                 onTap: () {
                   Navigator.push(
@@ -252,15 +272,31 @@ class CircuitSection extends StatelessWidget {
 
               const SizedBox(height: 10),
 
-              // 🔸 Run Pending Circuit Button → RunPage (same model)
+              // 🔸 Run Pending Circuit Button → shows loading then navigates
               GestureDetector(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => RunPage(execution: executionData[1]),
-                    ),
+                onTap: () async {
+                  // show loading dialog
+                  showDialog(
+                    context: context,
+                    barrierDismissible: false,
+                    builder: (_) => const LoadingDialog(),
                   );
+
+                  // wait for 5 seconds
+                  await Future.delayed(const Duration(seconds: 5));
+
+                  // close loading
+                  if (context.mounted) Navigator.of(context).pop();
+
+                  // navigate to RunPage
+                  if (context.mounted) {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => RunPage(execution: executionData[1]),
+                      ),
+                    );
+                  }
                 },
                 child: Container(
                   padding: const EdgeInsets.symmetric(

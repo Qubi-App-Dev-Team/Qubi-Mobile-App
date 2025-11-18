@@ -160,7 +160,7 @@ class RunPage extends StatelessWidget {
                 style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
               ),
               Text(
-                "Run ID: ${execution.runId}",
+                "Quantum Computer: ${execution.quantumComputer}",
                 style: const TextStyle(
                   fontSize: 13,
                   color: Colors.black54,

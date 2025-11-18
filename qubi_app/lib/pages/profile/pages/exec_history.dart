@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:qubi_app/assets/app_colors.dart';
+import 'package:qubi_app/components/app_colors.dart';
 import 'package:qubi_app/pages/home/run.dart';
 import 'package:qubi_app/pages/profile/models/execution.dart'; // new model import
 
@@ -20,30 +20,38 @@ class _ExecHistoryPageState extends State<ExecHistoryPage> {
   // ----------------------------------------------
   final List<Execution> allExecutions = [
     Execution(
-      message: true,
-      circuitId:
-          "abe6d955a212c337fa16498d5a378782330be5dc65e1bbc404a41f87383f3119",
-      runId: "Qv6DySvo3mjfiQLHkf8B",
-      quantumComputer: "IonQ",
-      histogramCounts: {"00": 490, "11": 510},
-      histogramProbabilities: {"00": 0.5, "11": 0.5},
-      time: 6.535945208001067,
+      success: true,
+      status: "completed",
+      circuitId: "test_circuit_001",
+      quantumComputer: "ibm_hanoi",
+      histogramCounts: {"00": 520, "01": 210, "10": 155, "11": 115},
+      histogramProbabilities: {
+        "00": 0.52,
+        "01": 0.21,
+        "10": 0.155,
+        "11": 0.115,
+      },
+      time: 8.92,
       shots: 1000,
+      createdAt: "2025-01-01T12:00:00Z",
+      userId: "test_user_123",
     ),
     Execution(
-      message: true,
-      circuitId: "xyzzza11",
-      runId: "A12SDd891",
-      quantumComputer: "IBM",
-      histogramCounts: {"00": 563, "01": 242, "10": 193, "11": 437},
+      success: true,
+      status: "completed",
+      circuitId: "test_circuit_001",
+      quantumComputer: "ibm_hanoi",
+      histogramCounts: {"00": 520, "01": 210, "10": 155, "11": 115},
       histogramProbabilities: {
-        "00": 0.563,
-        "01": 0.242,
-        "10": 0.193,
-        "11": 0.437,
+        "00": 0.52,
+        "01": 0.21,
+        "10": 0.155,
+        "11": 0.115,
       },
-      time: 9.43,
+      time: 8.92,
       shots: 1000,
+      createdAt: "2025-01-01T12:00:00Z",
+      userId: "test_user_123",
     ),
   ];
 
