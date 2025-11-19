@@ -50,6 +50,9 @@ def send_to_ibm(circuit: QuantumCircuit, shots: int = 1000, backend_name: str = 
         print(f"Error: {e}")
 
     service = QiskitRuntimeService(channel="ibm_quantum_platform")
+    
+    # may be the cause of the error:
+    # Error sending circuit to IBM: 'No matching instances found for the following filters: .'
     backend = service.least_busy(operational=True, simulator=False)
     transpiled_qc = transpile(circuit, backend=backend, optimization_level=3)
 

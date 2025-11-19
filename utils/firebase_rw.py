@@ -30,10 +30,14 @@ def add_results_new(results):
     Add results to the 'runs_results' collection.
     """
     runs_ref = db.collection('runs_results')
-    new_run = runs_ref.document()
+    
+    doc_id = results.pop('run_request_id')
+    new_run = runs_ref.document(doc_id)
 
     results.update({
-        'run_datetime': firestore.SERVER_TIMESTAMP
+        'created_at': firestore.SERVER_TIMESTAMP,
+        'success': True
+
     })
 
     new_run.set(results)
