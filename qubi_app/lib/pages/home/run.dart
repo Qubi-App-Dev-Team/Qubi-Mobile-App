@@ -4,18 +4,38 @@ import 'package:qubi_app/pages/profile/models/execution.dart';
 import 'package:qubi_app/pages/story/story_page.dart';
 import 'package:qubi_app/pages/home/components/dynamic_circuit.dart';
 
-class RunPage extends StatelessWidget {
+class RunPage extends StatefulWidget {
   final Execution execution;
   final List<Gate> gates;
   final int circuitDepth; 
 
   const RunPage({super.key, required this.execution, required this.gates, required this.circuitDepth});
-  
+
+  @override
+  State<StatefulWidget> createState() => _RunPageState();
+}
+
+class _RunPageState extends State<RunPage> {
+  late ScrollController scrollController;
+
+  @override
+  void initState() {
+    super.initState();
+    scrollController = ScrollController();
+  }
+
+  @override
+  void dispose() {
+    scrollController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
-    final results = execution.histogramCounts;
-    final totalShots = execution.shots.toString();
-    final runTime = "${execution.time.toStringAsFixed(3)} s";
+    final results = widget.execution.histogramCounts;
+    final totalShots = widget.execution.shots.toString();
+    final runTime = "${widget.execution.time.toStringAsFixed(3)} s";
+    final ScrollController scrollController = ScrollController();  
 
     return Scaffold(
       backgroundColor: const Color(0xFFE6EEF8),
@@ -93,7 +113,7 @@ class RunPage extends StatelessWidget {
           children: [
             _executorCard(),
             const SizedBox(height: 20),
-            _circuitCard(),
+            _circuitCard(scrollController),
             const SizedBox(height: 12),
             _resultsCard(results, totalShots, runTime),
           ],
@@ -128,7 +148,7 @@ class RunPage extends StatelessWidget {
                 ),
                 const SizedBox(width: 6),
                 Text(
-                  execution.quantumComputer,
+                  widget.execution.quantumComputer,
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w900,
@@ -146,7 +166,7 @@ class RunPage extends StatelessWidget {
   // ----------------------------------------------------------
   // CIRCUIT CARD (placeholder image)
   // ----------------------------------------------------------
-  Widget _circuitCard() => Container(
+  Widget _circuitCard(ScrollController scrollController) => Container(
     width: double.infinity,
     decoration: _cardDecoration(),
     child: Column(
@@ -162,7 +182,7 @@ class RunPage extends StatelessWidget {
                 style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
               ),
               Text(
-                "Quantum Computer: ${execution.quantumComputer}",
+                "Quantum Computer: ${widget.execution.quantumComputer}",
                 style: const TextStyle(
                   fontSize: 13,
                   color: Colors.black54,
@@ -177,15 +197,17 @@ class RunPage extends StatelessWidget {
         SizedBox(
           width: double.infinity,
           child: Scrollbar(
-            thumbVisibility: circuitDepth <= 5 ? false : true,
+            controller: scrollController,
+            thumbVisibility: widget.circuitDepth <= 5 ? false : true,
             thickness: 4,
             radius: Radius.circular(8),
             interactive: true,
             child: SingleChildScrollView(
+              controller: scrollController,
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
               physics: const BouncingScrollPhysics(),
-              child: CircuitView(gates: gates, circuitDepth: circuitDepth),
+              child: CircuitView(gates: widget.gates, circuitDepth: widget.circuitDepth),
             ),
           )
         ),
