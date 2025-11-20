@@ -25,15 +25,26 @@ processed_docs = set()
 from collections import Counter
 import numpy as np
 
-def add_results_new(results):
+def get_user_info(user_id):
+    """
+    Get user information from the 'users' collection.
+    """
+    users_ref = db.collection('Users')
+    user = users_ref.document(user_id).get()
+    return user.to_dict()
+
+def add_results_new(results, success: bool = True):
     """
     Add results to the 'runs_results' collection.
     """
     runs_ref = db.collection('runs_results')
-    new_run = runs_ref.document()
+    
+    doc_id = results.pop('run_request_id')
+    new_run = runs_ref.document(doc_id)
 
     results.update({
-        'run_datetime': firestore.SERVER_TIMESTAMP
+        'created_at': firestore.SERVER_TIMESTAMP,
+        'success': success
     })
 
     new_run.set(results)
