@@ -105,6 +105,7 @@ class _CircuitBottomDrawerState extends State<CircuitBottomDrawer> with TickerPr
               // 🧩 Scrollable drawer body
               Flexible(
                 child: SingleChildScrollView(
+                  scrollDirection: Axis.vertical,
                   physics: const BouncingScrollPhysics(),
                   child: Column(
                     children: const [

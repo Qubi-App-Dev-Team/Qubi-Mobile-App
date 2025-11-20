@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:qubi_app/components/app_colors.dart';
+import 'dart:math';
 
 class Gate {
   final String type;        // gate name
   final List<int> qubits;   // qubits
-  final int position;       // index
+  int position;             // index
 
   Gate({
     required this.type,
@@ -20,21 +21,26 @@ class Gate {
     );
   }
 }
+
 class CircuitView extends StatelessWidget {
   final List<Gate> gates;
   final double gridSpacing;
   final Color color1;
   final Color color2;
+  final int numQubits;
+  final int? circuitDepth;
 
   const CircuitView({
     super.key,
     required this.gates,
+    this.circuitDepth,
     this.color1 = const Color(0xFF66E3C4),
     this.color2 = const Color(0xFF9D6CFF),
+    this.numQubits = 2, // default to 2 unless specified
     this.gridSpacing = 80,
   });
 
-  int get numPositions => gates.length + 1;
+  int get numPositions => max((circuitDepth ?? gates.length) + 1, 5); // depth of circuit, comparing depth or min 5
 
   Widget _buildSingleGate(Gate gate) {
     return Container(
@@ -126,10 +132,10 @@ class CircuitView extends StatelessWidget {
     margin: const EdgeInsets.only(top: 10),
     child: SizedBox(
       width: numPositions * gridSpacing,
-      height: 200,
+      height: numQubits * 100,
       child: Stack(
         children: [
-          for (int q = 0; q < 2; q++) ...[
+          for (int q = 0; q < numQubits; q++) ...[ // for each qubit
             // draws donut rings
             Positioned( 
               top: 41.0 + (q * 80),
@@ -157,17 +163,17 @@ class CircuitView extends StatelessWidget {
           ],
 
           // placing gates
-          for (final gate in gates)
+          for (final gate in gates) ...[
             // multi-qubit gates
             if (gate.type == 'cx' || gate.type == 'cz') ...[
               Positioned( // positions gate
                 left: (gate.position + 1) * gridSpacing - 30,
-                top: 20.0 + (gate.qubits[0] * 80),
+                top: 20.0 + (gate.qubits[1] * 80),
                 child: _buildSingleGate(gate)
               ),
               Positioned( // draw control dot
                 left: (gate.position + 1) * gridSpacing - 10,
-                top: 40.0 + (gate.qubits[1] * 80),
+                top: 40.0 + (gate.qubits[0] * 80),
                 child: Container(
                   width: 20,
                   height: 20,
@@ -177,22 +183,30 @@ class CircuitView extends StatelessWidget {
                   ),
                 ),
               ),
-              // drawing connecting line
-              Positioned(
-                left: (gate.position + 1) * gridSpacing - 2,
-                top: gate.qubits[0] == 1 ? 50 : 80,
-                child: Container(
-                  width: 4,
-                  height: 50,
-                  color: Colors.blue,
-                ),
+              Builder ( // drawing connecting line
+                builder: (context) {
+                  final gate0 = 25 + (gate.qubits[0] * 80);
+                  final gate1 = 25 + (gate.qubits[1] * 80);
+                  final topValue = min(gate0, gate1).toDouble() + (gate0 < gate1 ? 29.0 : 51.0); // find where to position line
+
+                  return Positioned( 
+                    left: (gate.position + 1) * gridSpacing - 2,
+                    top: topValue,
+                    child: Container(
+                      width: 4,
+                      height: 50 + (((gate.qubits[1] - gate.qubits[0]).abs() - 1) * 80),
+                      color: Colors.blue,
+                    ),
+                  );
+                }
               )
             ] else // single qubit gates
-              Positioned(
-                left: (gate.position + 1) * gridSpacing - 30,
-                top: 20.0 + (gate.qubits[0] * 80),
-                child: _buildSingleGate(gate),
-             )
+                Positioned(
+                  left: (gate.position + 1) * gridSpacing - 30,
+                  top: 20.0 + (gate.qubits[0] * 80),
+                  child: _buildSingleGate(gate),
+                )
+            ]
           ],
         ),
       )

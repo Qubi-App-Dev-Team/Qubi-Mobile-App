@@ -6,7 +6,7 @@
     },
     {
       "name": "cx",
-      "qubit": [1, 0]
+      "qubit": [0, 1]
     },
     {
       "name": "y",
@@ -14,15 +14,27 @@
     },
     {
       "name": "cz",
-      "qubit": [0, 1]
+      "qubit": [1, 0]
     },
     {
       "name": "x",
       "qubit": [1]
     },
     {
+      "name": "cz",
+      "qubit": [0, 1]
+    },
+    {
       "name": "t*",
+      "qubit": [0]
+    },
+    {
+      "name": "z",
       "qubit": [1]
+    },
+    {
+      "name": "cx",
+      "qubit": [1, 0]
     },
     {
       "name": "t",

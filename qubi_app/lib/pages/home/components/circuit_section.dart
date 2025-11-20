@@ -7,22 +7,73 @@ import 'package:qubi_app/pages/home/components/dynamic_circuit.dart';
 import 'dart:convert';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:qubi_app/pages/home/components/loading_dialog.dart';
+import 'dart:math' as math;
 
-class CircuitSection extends StatelessWidget {
+class CircuitSection extends StatefulWidget {
   const CircuitSection({super.key});
 
-Future<List<Gate>> loadCircuit() async {
-  final data = await rootBundle.loadString('assets/circuit.json');
-  final jsonData = json.decode(data);
-
-  List<Map<String, dynamic>> gates =
-      List<Map<String, dynamic>>.from(jsonData['gates']);
-
-  return List<Gate>.generate(
-    gates.length,
-    (i) => Gate.fromJson(gates[i], i),
-  );
+  @override
+  State<CircuitSection> createState() => _CircuitSectionState();
 }
+
+class _CircuitSectionState extends State<CircuitSection> {
+  late Future<List<Gate>> _futureGates;
+  int circuitDepth = 0;
+  late ScrollController _scrollController = ScrollController();
+
+  Future<List<Gate>> loadCircuit() async {
+    final data = await rootBundle.loadString('assets/circuit.json');
+    final jsonData = json.decode(data);
+
+    List<Map<String, dynamic>> gatesJson =
+        List<Map<String, dynamic>>.from(jsonData['gates']);
+
+    List<Gate> gates = List<Gate>.generate(
+      gatesJson.length,
+      (i) => Gate.fromJson(gatesJson[i], i),
+    );
+
+    circuitDepth = processGates(gates);
+    return gates;
+  }
+  
+  // getting position of each gate - to make un-staggered
+  int processGates(List<Gate> gates) {
+    final Map<int, int> nextFreeColumn = {};
+
+    for (final gate in gates) {
+      int assignedColumn = 0;
+      final minQ = gate.qubits.reduce(math.min);
+      final maxQ = gate.qubits.reduce(math.max);
+
+      for (final q in gate.qubits) {
+        assignedColumn = math.max(assignedColumn, (nextFreeColumn[q] ?? 0));
+      }
+      gate.position = assignedColumn; // assign column position to gate
+
+      for (int q = minQ; q <= maxQ; q++) { 
+        nextFreeColumn[q] = assignedColumn + 1; // get next free space for qubit q at assigned + 1
+      }
+    }
+
+    return nextFreeColumn.values.fold(0, (a, b) => math.max(a, b)); // return depth of circuit
+  }
+
+  @override // init function with reading gates + getting depth
+  void initState() {
+    super.initState();
+    _scrollController = ScrollController();
+    _futureGates = loadCircuit().then((gates) {
+      if (gates.isEmpty) throw Exception('No gates exist');
+      return gates;
+    });
+  }
+
+  @override // dispose to close scroll
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -95,7 +146,7 @@ Future<List<Gate>> loadCircuit() async {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => RunPage(execution: executionData[0]),
+                          builder: (_) => RunPage(execution: executionData[1], gates: [], circuitDepth: 0),
                         ),
                       );
                     },
@@ -147,7 +198,7 @@ Future<List<Gate>> loadCircuit() async {
 
         // Circuit SVG image
         FutureBuilder<List<Gate>>(
-          future: loadCircuit(),
+          future: _futureGates,
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Center(child: CircularProgressIndicator());
@@ -162,10 +213,22 @@ Future<List<Gate>> loadCircuit() async {
               return const Text('No circuit data found');
             }
 
-            return SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
-              child: CircuitView(gates: gates),
+            return SizedBox (
+              width: double.infinity,
+              child: Scrollbar(
+                controller: _scrollController,
+                thumbVisibility: circuitDepth <= 5 ? false : true,
+                thickness: 4,
+                radius: Radius.circular(8),
+                interactive: true,
+                child: SingleChildScrollView(
+                  controller: _scrollController,
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
+                  physics: const BouncingScrollPhysics(),
+                  child: CircuitView(gates: gates, circuitDepth: circuitDepth),
+                ),
+              )
             );
           },
         ),
@@ -259,13 +322,20 @@ Future<List<Gate>> loadCircuit() async {
                   // close loading
                   if (context.mounted) Navigator.of(context).pop();
 
-                  // navigate to RunPage
-                  if (context.mounted) {
+                  // navigate to RunPage with valid gates
+                  try {
+                    final gates = await _futureGates;
+                    if (!context.mounted) return;
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => RunPage(execution: executionData[1]),
+                        builder: (_) => RunPage(execution: executionData[1], gates: gates, circuitDepth: circuitDepth),
                       ),
+                    );
+                  } catch (e) {
+                    if (!context.mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Failed to load circuit: $e')),
                     );
                   }
                 },

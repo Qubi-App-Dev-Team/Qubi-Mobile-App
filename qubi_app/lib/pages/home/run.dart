@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:qubi_app/pages/profile/models/execution.dart';
 import 'package:qubi_app/pages/story/story_page.dart';
+import 'package:qubi_app/pages/home/components/dynamic_circuit.dart';
 
 class RunPage extends StatelessWidget {
   final Execution execution;
+  final List<Gate> gates;
+  final int circuitDepth; 
 
-  const RunPage({super.key, required this.execution});
-
+  const RunPage({super.key, required this.execution, required this.gates, required this.circuitDepth});
+  
   @override
   Widget build(BuildContext context) {
     final results = execution.histogramCounts;
@@ -160,7 +162,7 @@ class RunPage extends StatelessWidget {
                 style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
               ),
               Text(
-                "Run ID: ${execution.runId}",
+                "Quantum Computer: ${execution.quantumComputer}",
                 style: const TextStyle(
                   fontSize: 13,
                   color: Colors.black54,
@@ -172,14 +174,20 @@ class RunPage extends StatelessWidget {
         ),
 
         const Divider(color: Color(0xFFE0E6ED), height: 1),
-        Container(
-          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
+        SizedBox(
           width: double.infinity,
-          child: SvgPicture.asset(
-            'assets/images/circuit1.svg',
-            height: 140,
-            fit: BoxFit.contain,
-          ),
+          child: Scrollbar(
+            thumbVisibility: circuitDepth <= 5 ? false : true,
+            thickness: 4,
+            radius: Radius.circular(8),
+            interactive: true,
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
+              physics: const BouncingScrollPhysics(),
+              child: CircuitView(gates: gates, circuitDepth: circuitDepth),
+            ),
+          )
         ),
       ],
     ),
