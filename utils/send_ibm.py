@@ -7,10 +7,10 @@ from qiskit_ibm_runtime.accounts.exceptions import AccountAlreadyExistsError
 load_dotenv()
 
 
-def get_ibm_results(circuit: QuantumCircuit, shots: int = 1000, backend_name: str = "simulator_stabilizer"):
+def get_ibm_results(circuit: QuantumCircuit, shots: int = 1000, backend_name: str = "simulator_stabilizer", api_token: str = None):
 
     try:
-        result, backend_name_final = send_to_ibm(circuit, shots, backend_name)
+        result, backend_name_final = send_to_ibm(circuit, shots, backend_name, api_token)
         
         counts = get_counts_from_primitive_result(result)
         probabilities = {k: v / shots for k, v in counts.items()}
@@ -36,14 +36,12 @@ def get_ibm_results(circuit: QuantumCircuit, shots: int = 1000, backend_name: st
         print(f"Error sending circuit to IBM: {e}")
         return None
 
-def send_to_ibm(circuit: QuantumCircuit, shots: int = 1000, backend_name: str = "default"):
+def send_to_ibm(circuit: QuantumCircuit, shots: int = 1000, backend_name: str = "default", api_token: str = None):
 
     try:
-        api_token = os.getenv("IBM_API_TOKEN")
         if not api_token:
             raise Exception("IBM_API_TOKEN environment variable not set. Please set it in your .env file.")
         QiskitRuntimeService.save_account(channel="ibm_quantum_platform", token=api_token)
-        
     except AccountAlreadyExistsError as e:
         pass
     except Exception as e:

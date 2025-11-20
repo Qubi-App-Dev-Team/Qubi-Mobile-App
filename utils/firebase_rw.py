@@ -25,6 +25,14 @@ processed_docs = set()
 from collections import Counter
 import numpy as np
 
+def get_user_info(user_id):
+    """
+    Get user information from the 'users' collection.
+    """
+    users_ref = db.collection('Users')
+    user = users_ref.document(user_id).get()
+    return user.to_dict()
+
 def add_results_new(results, success: bool = True):
     """
     Add results to the 'runs_results' collection.
