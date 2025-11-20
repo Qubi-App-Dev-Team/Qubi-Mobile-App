@@ -8,6 +8,31 @@ from utils.send_ionq import get_ionq_results
 from utils.send_ibm import get_ibm_results
 from typing import Any, Dict, Optional, List
 
+
+from dotenv import load_dotenv
+
+import json
+import os
+import time
+
+import firebase_admin
+from firebase_admin import credentials, firestore
+
+load_dotenv()
+
+# Initialize Firebase Admin (local or env-based)
+try:
+    cred_dict = json.loads(os.getenv('FIREBASE_CREDENTIALS'))
+    cred = credentials.Certificate(cred_dict)
+except:
+    cred = credentials.Certificate('service-account-key.json')
+
+if not firebase_admin._apps:
+    firebase_admin.initialize_app(cred)
+db = firestore.client()
+
+processed_docs = set()
+
 """ quantum_computer_name options:
         ionq: 'ionq_simulator'
         ibm: ''

@@ -8,6 +8,7 @@ class ExecutionModel {
   final String? circuitId;
   final double? elapsedTimeS;
   final String? quantumComputer;
+  final String? errorMessage; // NEW
 
   const ExecutionModel({
     this.userId,
@@ -19,6 +20,7 @@ class ExecutionModel {
     this.circuitId,
     this.elapsedTimeS,
     this.quantumComputer,
+    this.errorMessage, // NEW
   });
 
   factory ExecutionModel.fromJson(Map<String, dynamic> json) {
@@ -28,6 +30,7 @@ class ExecutionModel {
 
     final countsField = json['histogram_counts'];
     final probsField = json['histogram_probabilities'];
+    final bool? success = json['success'];
 
     if (countsField is List) {
       counts = {};
@@ -47,36 +50,52 @@ class ExecutionModel {
       probs = Map<String, double>.from(probsField);
     }
 
+    // If success is explicitly false, force histograms to be empty
+    if (success == false) {
+      counts = {};
+      probs = {};
+    }
+
     return ExecutionModel(
       userId: json['user_id'],
       createdAt: DateTime.tryParse(json['created_at'] ?? ''),
-      success: json['success'],
+      success: success,
       shots: json['shots'],
       histogramCounts: counts,
       histogramProbabilities: probs,
       circuitId: json['circuit_id'],
       elapsedTimeS: (json['elapsed_time_s'] ?? json['time'] ?? 0).toDouble(),
       quantumComputer: json['quantum_computer'],
+      errorMessage: json['error_message'], // NEW
     );
   }
 
   Map<String, dynamic> toJson() {
+    final bool? isSuccess = success;
+
+    // If success is false, serialize empty histograms
+    final Map<String, int>? countsToWrite =
+        (isSuccess == false) ? {} : histogramCounts;
+    final Map<String, double>? probsToWrite =
+        (isSuccess == false) ? {} : histogramProbabilities;
+
     return {
       'user_id': userId,
       'created_at': createdAt?.toIso8601String(),
       'success': success,
       'shots': shots,
       'histogram_counts': [
-        if (histogramCounts != null)
-          for (var e in histogramCounts!.entries) {e.key: e.value},
+        if (countsToWrite != null)
+          for (var e in countsToWrite.entries) {e.key: e.value},
       ],
       'histogram_probabilities': [
-        if (histogramProbabilities != null)
-          for (var e in histogramProbabilities!.entries) {e.key: e.value},
+        if (probsToWrite != null)
+          for (var e in probsToWrite.entries) {e.key: e.value},
       ],
       'circuit_id': circuitId,
       'elapsed_time_s': elapsedTimeS,
       'quantum_computer': quantumComputer,
+      'error_message': errorMessage, // NEW
     };
   }
 
