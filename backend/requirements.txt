@@ -7,4 +7,5 @@ qiskit-ionq
 firebase-admin
 python-dotenv
 matplotlib
+streamlit==1.51.0
 #fastapi[standard]==0.112.0
