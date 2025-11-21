@@ -177,7 +177,7 @@ class _CircuitSectionState extends State<CircuitSection> {
             top: 10,
             bottom: 5,
           ),
-          child: const Row(
+          child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
@@ -188,10 +188,32 @@ class _CircuitSectionState extends State<CircuitSection> {
                   color: Colors.black,
                 ),
               ),
-              // Text(
-              //   'View all >',
-              //   style: TextStyle(fontSize: 15, color: Colors.black54),
-              // ),
+              Row(
+                children: [
+                  IconButton( // back scroll button
+                    icon: const Icon(Icons.arrow_back_ios, size: 18, color: Colors.black54),
+                    onPressed: () {
+                      final double newOffset = _scrollController.offset - 100;
+                      _scrollController.animateTo(
+                        newOffset.clamp(0, _scrollController.position.maxScrollExtent),
+                        duration: const Duration(milliseconds: 300),
+                        curve: Curves.easeInOut,
+                      );
+                    },
+                  ),
+                  IconButton( // forward scroll button
+                    icon: const Icon(Icons.arrow_forward_ios, size: 18, color: Colors.black54),
+                    onPressed: () {
+                      final double newOffset = _scrollController.offset + 100;
+                      _scrollController.animateTo(
+                        newOffset.clamp(0, _scrollController.position.maxScrollExtent),
+                        duration: const Duration(milliseconds: 300),
+                        curve: Curves.easeInOut,
+                      );
+                    },
+                  )
+                ]
+              )
             ],
           ),
         ),
@@ -215,20 +237,13 @@ class _CircuitSectionState extends State<CircuitSection> {
 
             return SizedBox (
               width: double.infinity,
-              child: Scrollbar(
-                controller: _scrollController,
-                thumbVisibility: circuitDepth <= 5 ? false : true,
-                thickness: 4,
-                radius: Radius.circular(8),
-                interactive: true,
-                child: SingleChildScrollView(
+              child: SingleChildScrollView(
                   controller: _scrollController,
                   scrollDirection: Axis.horizontal,
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
                   physics: const BouncingScrollPhysics(),
                   child: CircuitView(gates: gates, circuitDepth: circuitDepth),
                 ),
-              )
             );
           },
         ),

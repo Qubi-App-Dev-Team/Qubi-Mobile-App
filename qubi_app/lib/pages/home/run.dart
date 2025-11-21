@@ -177,18 +177,36 @@ class _RunPageState extends State<RunPage> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                "Circuit",
-                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
-              ),
               Text(
-                "Quantum Computer: ${widget.execution.quantumComputer}",
-                style: const TextStyle(
-                  fontSize: 13,
-                  color: Colors.black54,
-                  fontWeight: FontWeight.w700,
-                ),
+                "Circuit Depth: ${widget.circuitDepth}",
+                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
               ),
+              Row(
+                children: [
+                  IconButton( // back scroll button
+                    icon: const Icon(Icons.arrow_back_ios, size: 18, color: Colors.black54),
+                    onPressed: () {
+                      final double newOffset = scrollController.offset - 200;
+                      scrollController.animateTo(
+                        newOffset.clamp(0, scrollController.position.maxScrollExtent),
+                        duration: const Duration(milliseconds: 300),
+                        curve: Curves.easeInOut,
+                      );
+                    },
+                  ),
+                  IconButton( // forward scroll button
+                    icon: const Icon(Icons.arrow_forward_ios, size: 18, color: Colors.black54),
+                    onPressed: () {
+                      final double newOffset = scrollController.offset + 200;
+                      scrollController.animateTo(
+                        newOffset.clamp(0, scrollController.position.maxScrollExtent),
+                        duration: const Duration(milliseconds: 300),
+                        curve: Curves.easeInOut,
+                      );
+                    },
+                  )
+                ]
+              )
             ],
           ),
         ),
@@ -196,21 +214,14 @@ class _RunPageState extends State<RunPage> {
         const Divider(color: Color(0xFFE0E6ED), height: 1),
         SizedBox(
           width: double.infinity,
-          child: Scrollbar(
-            controller: scrollController,
-            thumbVisibility: widget.circuitDepth <= 5 ? false : true,
-            thickness: 4,
-            radius: Radius.circular(8),
-            interactive: true,
-            child: SingleChildScrollView(
+          child: SingleChildScrollView(
               controller: scrollController,
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
               physics: const BouncingScrollPhysics(),
               child: CircuitView(gates: widget.gates, circuitDepth: widget.circuitDepth),
             ),
-          )
-        ),
+          ),
       ],
     ),
   );
@@ -328,16 +339,16 @@ class _RunPageState extends State<RunPage> {
                 Text(
                   "Total shots: $totalShots",
                   style: const TextStyle(
-                    fontSize: 13,
-                    color: Colors.black54,
+                    fontSize: 15,
+                    color: Colors.black,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
                 Text(
                   "Run time: $runTime",
                   style: const TextStyle(
-                    fontSize: 13,
-                    color: Colors.black54,
+                    fontSize: 15,
+                    color: Colors.black,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
