@@ -1,5 +1,3 @@
-# app.py
-
 import streamlit as st
 from typing import Any, Dict, List, Optional
 
@@ -20,6 +18,7 @@ from helpers import (
     export_chapter_to_bytes,
     save_chapter_to_firestore,
     soft_delete_chapter,
+    unarchive_chapter,
     upload_image_to_supabase,
 )
 
@@ -102,7 +101,12 @@ def show_home_view() -> None:
                         st.session_state.mode = "edit"
                         st.rerun()
             with cols[2]:
-                if status != "archived":
+                if status == "archived":
+                    if st.button("Unarchive", key=f"unarchive-{ch['id']}"):
+                        unarchive_chapter(ch["id"])
+                        st.success("Chapter unarchived.")
+                        st.rerun()
+                else:
                     if st.button("Archive", key=f"archive-{ch['id']}"):
                         soft_delete_chapter(ch["id"])
                         st.success("Chapter archived.")

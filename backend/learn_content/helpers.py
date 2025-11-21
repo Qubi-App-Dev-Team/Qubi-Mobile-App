@@ -387,6 +387,12 @@ def soft_delete_chapter(chapter_id: str) -> None:
     doc_ref.set({"status": "archived"}, merge=True)
 
 
+def unarchive_chapter(chapter_id: str) -> None:
+    """Unarchive a chapter (mark status='active')."""
+    doc_ref = _db.collection(CHAPTERS_COLLECTION).document(chapter_id)
+    doc_ref.set({"status": "active"}, merge=True)
+
+
 def upload_image_to_supabase(uploaded_file, existing_url: Optional[str] = None) -> str:
     """Upload an image to Supabase and optionally delete a previous one."""
     if supabase is None:
@@ -401,7 +407,6 @@ def upload_image_to_supabase(uploaded_file, existing_url: Optional[str] = None) 
 
     file_path = filename
 
-    # Upload; supabase-py raises on error, so no need to inspect response
     supabase.storage.from_(SUPABASE_BUCKET).upload(
         file_path,
         file_bytes,
