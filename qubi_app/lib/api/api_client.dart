@@ -178,4 +178,30 @@ class ApiClient {
           'Failed to fetch run history. Status: ${response.statusCode}');
     }
   }
+
+    // =======================================================
+  // 4️⃣  FETCH LAST SHAKE
+  // =======================================================
+  static Future<ExecutionModel?> fetchLastShake() async {
+    final userId = StoredUserInfo.userID;
+    final url = Uri.parse('$_baseUrl/fetch_last_shake/$userId');
+
+    if (debug) print('[ApiClient] → GET $url');
+
+    final response = await http.get(url);
+
+    if (response.statusCode == 200) {
+      final decoded = jsonDecode(response.body);
+      if (debug) print('[ApiClient] ✅ Last shake fetched');
+
+      return ExecutionModel.fromJson(decoded);
+    }
+
+    if (response.statusCode == 404) {
+      if (debug) print('[ApiClient] ❌ No last shake found');
+      return null;
+    }
+
+    throw Exception('Failed to fetch last shake: ${response.statusCode}');
+  }
 }

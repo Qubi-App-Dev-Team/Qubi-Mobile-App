@@ -91,6 +91,7 @@ async def make_request(dto: MakeRequestDTO, bg: BackgroundTasks):
         "circuit_id": circuit_id,
         "quantum_computer": dto.quantum_computer,
         "created_at": firestore.SERVER_TIMESTAMP,
+        "status": "PENDING",
     })
 
     bg.add_task(
@@ -175,15 +176,17 @@ async def fetch_last_shake(user_id: str):
 
     try:
         # Query the latest run_result by creation time
+        print('trying')
         query = (
             db.collection("run_results")
             .where("user_id", "==", user_id)
+            .where("success", "==", True)
             .order_by("created_at", direction=firestore.Query.DESCENDING)
             .limit(1)
             .stream()
         )
-
         doc = next(query, None)
+        print('trying1')
         if not doc:
             return {"status": "NONE", "message": "No completed runs found"}
 
