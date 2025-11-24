@@ -26,6 +26,7 @@ class ChapterDataStore {
   ///
   /// Flow:
   /// 1) Try Firestore server read. On success:
+  ///    - keeps Firestore documents to check for updates later
   ///    - updates [chapters] in memory
   ///    - writes snapshot to disk
   /// 2) If Firestore read fails:
@@ -158,6 +159,16 @@ class ChapterDataStore {
       chapterPages.add(chapterData['sections'].length);
     }
     return chapterPages;
+  }
+
+  static bool getUpdates({required int chapterNum}) {
+    //version is an integer
+    return latestChapters[chapterNum - 1]['version'] > chapters[chapterNum - 1]['version'];
+  }
+
+  static void updateChapter({required int chapterNum}) {
+    chapters[chapterNum - 1] = latestChapters[chapterNum - 1];
+    _writeSnapshotToDisk();
   }
 
 

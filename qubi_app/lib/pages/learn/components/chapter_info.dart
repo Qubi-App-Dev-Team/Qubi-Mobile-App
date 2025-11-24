@@ -6,6 +6,7 @@ import 'package:qubi_app/pages/learn/components/info_badge.dart';
 import 'package:qubi_app/pages/learn/models/chapter.dart';
 import 'package:qubi_app/pages/learn/pages/chapter_content_page.dart';
 import 'package:qubi_app/user_bloc/stored_user_info.dart';
+import 'package:qubi_app/pages/learn/bloc/chapter_data_store.dart';
 
 /// Card for a single chapter on the All Chapters page.
 /// Now fully reactive via StoredUserInfo ValueNotifiers:
@@ -33,23 +34,46 @@ class ChapterInfo extends StatelessWidget {
       clipBehavior: Clip.antiAlias, // ripple stays within rounded corners
       child: InkWell(
         onTap: () async {
-          // Capture navigator before any await (avoid context across async gaps)
           final navigator = Navigator.of(context);
 
-          // Read the latest locked value from the notifier (fallback to false)
-          final locked = StoredUserInfo.chapterLockedVN.value[chapter.number] ?? true;
-
-          if (locked) {
+          // 1) Respect current lock state
+          final wasLocked =
+              StoredUserInfo.chapterLockedVN.value[chapter.number] ?? true;
+          if (wasLocked) {
             final proceed = await _confirmProceedDialog(context);
             if (proceed != true) return;
           }
+
+          bool hasUpdate = ChapterDataStore.getUpdates(
+              chapterNum: chapter.number,
+          );
+
           if (!navigator.mounted) return;
+          if (hasUpdate) {
+            final wantsUpdate = await _confirmUpdateDialog(context, chapter);
+            if (wantsUpdate == true) {
+                ChapterDataStore.updateChapter(
+                  chapterNum: chapter.number,
+                );
+            }
+          }
+
+          if (!navigator.mounted) return;
+
+          // 3) Navigate to sections page
           await navigator.push(
             MaterialPageRoute(
               builder: (_) => ChapterContentPage(chapter: chapter),
             ),
           );
-          if (locked) {await StoredUserInfo.setChapterLocked(chapterNum: chapter.number, locked: false);}
+
+          // 4) Optional: auto-unlock after first open if it was locked when tapped
+          if (wasLocked) {
+            await StoredUserInfo.setChapterLocked(
+              chapterNum: chapter.number,
+              locked: false,
+            );
+          }
         },
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -71,7 +95,7 @@ class ChapterInfo extends StatelessWidget {
                   // Reactive Locked badge
                   ValueListenableBuilder<Map<int, bool>>(
                     valueListenable: StoredUserInfo.chapterLockedVN,
-                    builder: (_, lockedMap, _) {
+                    builder: (_, lockedMap, __) {
                       final locked = lockedMap[chapter.number] ?? false;
                       if (!locked) return const SizedBox.shrink();
                       return InfoBadge(
@@ -113,17 +137,17 @@ class ChapterInfo extends StatelessWidget {
               /// Progress (reactive) — only when unlocked
               ValueListenableBuilder<Map<int, bool>>(
                 valueListenable: StoredUserInfo.chapterLockedVN,
-                builder: (_, lockedMap, _) {
+                builder: (_, lockedMap, __) {
                   final locked = lockedMap[chapter.number] ?? false;
                   if (locked) {
-                    // Keep vertical rhythm similar to your original
                     return const SizedBox(height: 6);
                   }
 
                   return ValueListenableBuilder<Map<int, double>>(
                     valueListenable: StoredUserInfo.chapterProgressVN,
-                    builder: (_, progressMap, _) {
-                      final p = (progressMap[chapter.number] ?? 0.0).clamp(0.0, 1.0);
+                    builder: (_, progressMap, __) {
+                      final p = (progressMap[chapter.number] ?? 0.0)
+                          .clamp(0.0, 1.0);
                       final percentText = '${(p * 100).round()}% progress';
                       return Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -162,11 +186,9 @@ class ChapterInfo extends StatelessWidget {
                     borderColor: Colors.transparent,
                   ),
                   const SizedBox(width: 10),
-
-                  // Reactive skins count
                   ValueListenableBuilder<Map<int, int>>(
                     valueListenable: StoredUserInfo.chapterSkinsUnlockedVN,
-                    builder: (_, skinsMap, _) {
+                    builder: (_, skinsMap, __) {
                       final count = skinsMap[chapter.number] ?? 0;
                       return InfoBadge(
                         leading: SvgPicture.asset(
@@ -183,7 +205,6 @@ class ChapterInfo extends StatelessWidget {
                       );
                     },
                   ),
-
                   const Spacer(),
                 ],
               ),
@@ -213,6 +234,34 @@ class ChapterInfo extends StatelessWidget {
           ElevatedButton(
             onPressed: () => Navigator.of(ctx).pop(true),
             child: const Text('Yes'),
+          ),
+        ],
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    );
+  }
+
+  /// Update-available dialog
+  Future<bool?> _confirmUpdateDialog(BuildContext context, Chapter chapter) {
+    return showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        title: Text('Update available for Chapter ${chapter.number}'),
+        content: const Text(
+          'An update is available for this chapter.\n\n'
+          'Updating may reset your chapter progress. '
+          'We suggest completing the current version before updating.\n\n'
+          'Would you like to update now?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Not now'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Update & continue'),
           ),
         ],
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),

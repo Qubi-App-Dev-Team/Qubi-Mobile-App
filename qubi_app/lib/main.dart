@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart'; // firebase core
+import 'package:firebase_auth/firebase_auth.dart'; // firebase auth
 import 'firebase_options.dart'; // firebase options
 import 'package:flutter_dotenv/flutter_dotenv.dart'; // dotenv for env variables
 import 'package:flutter/foundation.dart';
 import 'package:qubi_app/auth_gate.dart'; // auth gate
+import 'package:qubi_app/pages/learn/bloc/chapter_data_store.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -14,6 +16,10 @@ Future<void> main() async {
     _ => dotenv.env['GOOGLE_CLIENT_ID'] ?? '', // Web or others
   };
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform,);
+  User? currUser = FirebaseAuth.instance.currentUser;
+  if (currUser != null) {
+    await ChapterDataStore.refreshChaptersCache(userID: currUser.uid, includeDocId: true);
+  }
   runApp(MyApp(clientId: clientId));
 }
 
