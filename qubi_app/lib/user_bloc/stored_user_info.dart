@@ -4,7 +4,7 @@ import 'dart:math';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/foundation.dart' hide Key;
+import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 
 import 'package:qubi_app/pages/learn/bloc/chapter_data_store.dart';
@@ -59,6 +59,7 @@ class StoredUserInfo {
     if (currUser == null) return;
 
     userID = currUser.uid;
+    await ChapterDataStore.refreshChaptersCache(userID: userID, includeDocId: true);
     documentReference = FirebaseFirestore.instance.collection(folderName).doc(currUser.uid);
 
     final DocumentSnapshot? docSnap = await documentReference?.get();

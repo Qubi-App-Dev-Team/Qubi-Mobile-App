@@ -17,10 +17,10 @@ class ChapterDataStore {
   /// Shared in-memory cache of chapter documents:
   /// each entry is a Map`<`String, dynamic`>` representing one document.
   static List<Map<String, dynamic>> chapters = <Map<String, dynamic>>[];
-
+  static List<Map<String, dynamic>> latestChapters = <Map<String, dynamic>>[];
   static const String collectionPath = 'chapters';
   static const String folderName = 'user_docs';     
-  static const String fileName = 'chapters.json';   
+  static String fileName = '';   
 
   /// Public: Refresh the in-memory cache.
   ///
@@ -31,27 +31,41 @@ class ChapterDataStore {
   /// 2) If Firestore read fails:
   ///    - if disk file exists, read it and update [chapters]
   ///    - else create empty file with {"chapters": []} and keep [chapters] empty
-  static Future<void> refreshChaptersCache({bool includeDocId = true}) async {
+  static Future<void> refreshChaptersCache({required String userID, bool includeDocId = true}) async {
+    fileName = '$userID-chapters.json';
     try {
       // 1) Prefer fresh server data (requires Firebase initialized & permitted)
       final qs = await FirebaseFirestore.instance
           .collection(collectionPath)
           .get(const GetOptions(source: Source.server));
 
-      final next = <Map<String, dynamic>>[];
       for (final doc in qs.docs) {
         final data = Map<String, dynamic>.from(doc.data());
         if (includeDocId) data['id'] = doc.id;
-        next.add(data);
+        if (data['status'] == 'active'){
+          latestChapters.add(data);
+        }
       }
-
-      chapters = next; // update in-memory cache
-      chapters.sort((a, b) => a['number'].compareTo(b['number']));
-      await _writeSnapshotToDisk(); // persist for offline use
-
+      latestChapters.sort((a, b) => a['number'].compareTo(b['number']));
+      final userFile = File('$folderName/$fileName');
+      if (!await userFile.exists()) {
+        await _writeSnapshotToDisk();
+        chapters = latestChapters;
+      }
+      else {
+        final text = await userFile.readAsString();
+        final decoded = jsonDecode(text);
+        chapters = (decoded is Map && decoded['chapters'] is List)
+            ? (decoded['chapters'] as List).map<Map<String, dynamic>>((e) {
+                if (e is Map) return Map<String, dynamic>.from(e);
+                return <String, dynamic>{};
+              }).toList()
+            : <Map<String, dynamic>>[];
+      }
       if (kDebugMode) {
         debugPrint('[ChapterDataStore] Refreshed from Firestore: ${chapters.length} docs');
       }
+
     } catch (e, st) {
       // 2) Firestore failed → try local disk snapshot
       if (kDebugMode) {
@@ -64,21 +78,17 @@ class ChapterDataStore {
         try {
           final text = await file.readAsString();
           final decoded = jsonDecode(text);
-
-          // Expecting { "chapters": [ ... ] }
-          final list = (decoded is Map && decoded['chapters'] is List)
+          chapters = (decoded is Map && decoded['chapters'] is List)
               ? (decoded['chapters'] as List).map<Map<String, dynamic>>((e) {
                   if (e is Map) return Map<String, dynamic>.from(e);
                   return <String, dynamic>{};
                 }).toList()
               : <Map<String, dynamic>>[];
-
-          chapters = list;
-
           if (kDebugMode) {
             debugPrint('[ChapterDataStore] Loaded ${chapters.length} docs from disk snapshot');
           }
-        } catch (readErr, st2) {
+        } 
+        catch (readErr, st2) {
           if (kDebugMode) {
             debugPrint('[ChapterDataStore] Failed to read disk snapshot: $readErr');
             debugPrint('$st2');
@@ -86,7 +96,8 @@ class ChapterDataStore {
           // Keep cache empty; rewrite a clean empty file below.
           await _writeEmptyIfEmpty();
         }
-      } else {
+      } 
+      else {
         // File somehow missing even after ensure → create empty.
         await _writeEmptyIfEmpty();
       }
