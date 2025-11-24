@@ -13,3 +13,5 @@ firebase_options.dart
 
 results/
 .venv
+
+backend/learn_content/service_account.json

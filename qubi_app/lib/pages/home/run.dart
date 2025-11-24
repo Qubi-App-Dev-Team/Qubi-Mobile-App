@@ -33,6 +33,9 @@ class _RunPageState extends State<RunPage> {
   int _shots = 0;
   String _quantumComputer = "";
 
+  bool? _success;           // ⬅️ NEW: null = waiting, true/false = result
+  String? _errorMessage;    // ⬅️ NEW
+
   @override
   void initState() {
     super.initState();
@@ -40,8 +43,15 @@ class _RunPageState extends State<RunPage> {
     // Old static path (now ExecutionModel)
     if (widget.execution != null) {
       final e = widget.execution!;
-      _histogramCounts = e.histogramCounts ?? {};
-      _elapsedTime = e.elapsedTimeS; // ⬅️ was e.time
+
+      _success = e.success ?? true;
+      _errorMessage = e.errorMessage;
+
+      // If backend already empties histograms on failure, this is mostly defensive.
+      final counts = e.histogramCounts ?? {};
+      _histogramCounts = (_success == false) ? {} : counts;
+
+      _elapsedTime = e.elapsedTimeS;
       _shots = e.shots ?? 0;
       _quantumComputer = e.quantumComputer ?? "";
     }
@@ -52,6 +62,7 @@ class _RunPageState extends State<RunPage> {
       _listenForResults(widget.runRequestId!);
     }
   }
+
 
   void _listenForResults(String runRequestId) {
     setState(() => _isLoading = true);
@@ -64,18 +75,32 @@ class _RunPageState extends State<RunPage> {
       if (!snapshot.exists) return;
       final data = snapshot.data() as Map<String, dynamic>;
 
-      if (data['success'] == true && mounted) {
-        setState(() {
-          _isLoading = false;
+      final rawSuccess = data['success'];
+      final success = rawSuccess is bool ? rawSuccess : true; // default true if missing
+      final errorMessage = data['error_message'] as String?;
+
+      if (!mounted) return;
+
+      setState(() {
+        _isLoading = false;
+        _success = success;
+        _errorMessage = errorMessage;
+
+        _elapsedTime = (data['elapsed_time_s'] ?? 0).toDouble();
+        _quantumComputer = data['quantum_computer'] ?? '';
+        _shots = (data['shots'] ?? 0);
+
+        if (success) {
           _histogramCounts =
               Map<String, int>.from(data['histogram_counts'] ?? {});
-          _elapsedTime = (data['elapsed_time_s'] ?? 0).toDouble();
-          _quantumComputer = data['quantum_computer'] ?? '';
-          _shots = (data['shots'] ?? 0);
-        });
-      }
+        } else {
+          // On failure, keep histogram empty
+          _histogramCounts = {};
+        }
+      });
     });
   }
+
 
   @override
   void dispose() {
@@ -225,6 +250,7 @@ class _RunPageState extends State<RunPage> {
   // ----------------------------------------------------------
   Widget _resultsCard(Map<String, int> results, String shotsStr, String time) {
     final hasResults = results.isNotEmpty;
+    final isFailed = (_success == false); // ⬅️ NEW
 
     final maxVal = hasResults
         ? results.values.reduce(max)
@@ -273,111 +299,130 @@ class _RunPageState extends State<RunPage> {
 
           AspectRatio(
             aspectRatio: 1.6,
-            child: hasResults
-                ? BarChart(
-                    BarChartData(
-                      maxY: chartMaxY,
-                      gridData: FlGridData(show: false),
-                      borderData: FlBorderData(show: false),
-                      alignment: BarChartAlignment.spaceAround,
-                      groupsSpace: 18,
-                      barTouchData: BarTouchData(
-                        enabled: true,
-                        handleBuiltInTouches: false,
-                        touchTooltipData: BarTouchTooltipData(
-                          tooltipBgColor: Colors.transparent,
-                          tooltipPadding: EdgeInsets.zero,
-                          tooltipMargin: 6,
-                          getTooltipItem: (group, groupIndex, rod, rodIndex) {
-                            return BarTooltipItem(
-                              rod.toY.toInt().toString(),
-                              const TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w700,
-                                color: Colors.black87,
-                              ),
-                            );
-                          },
+            child: isFailed
+                ? Center(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Text(
+                        _errorMessage ??
+                            "Unable to get results from the quantum computer",
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: Colors.red,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
-                      titlesData: FlTitlesData(
-                        leftTitles: AxisTitles(
-                          sideTitles: SideTitles(showTitles: false),
-                        ),
-                        rightTitles: AxisTitles(
-                          sideTitles: SideTitles(
-                            showTitles: true,
-                            interval: step.toDouble(),
-                            reservedSize: 36,
-                            getTitlesWidget: (value, _) {
-                              final v = value.toInt();
-                              if (v % step != 0) return const SizedBox.shrink();
-                              return Text(
-                                "$v",
-                                textAlign: TextAlign.right,
-                                style: const TextStyle(
-                                  fontSize: 11,
-                                  color: Colors.black54,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              );
-                            },
-                          ),
-                        ),
-                        topTitles: AxisTitles(
-                          sideTitles: SideTitles(showTitles: false),
-                        ),
-                        bottomTitles: AxisTitles(
-                          sideTitles: SideTitles(
-                            showTitles: true,
-                            reservedSize: 24,
-                            getTitlesWidget: (value, _) {
-                              final i = value.toInt();
-                              if (i < 0 || i >= entries.length) {
-                                return const SizedBox.shrink();
-                              }
-                              return Padding(
-                                padding: const EdgeInsets.only(top: 4),
-                                child: Text(
-                                  entries[i].key,
-                                  style: const TextStyle(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
-                        ),
-                      ),
-                      barGroups: barGroups,
                     ),
-                    swapAnimationDuration: const Duration(milliseconds: 900),
-                    swapAnimationCurve: Curves.easeOutCubic,
                   )
-                : Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: const [
-                        SizedBox(height: 16),
-                        CircularProgressIndicator(
-                          valueColor:
-                              AlwaysStoppedAnimation<Color>(Color(0xFF6525FE)),
-                          strokeWidth: 3,
-                        ),
-                        SizedBox(height: 12),
-                        Text(
-                          "Waiting for results from quantum computer…",
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Colors.black54,
-                            fontWeight: FontWeight.w500,
+                : hasResults
+                    ? BarChart(
+                        BarChartData(
+                          maxY: chartMaxY,
+                          gridData: FlGridData(show: false),
+                          borderData: FlBorderData(show: false),
+                          alignment: BarChartAlignment.spaceAround,
+                          groupsSpace: 18,
+                          barTouchData: BarTouchData(
+                            enabled: true,
+                            handleBuiltInTouches: false,
+                            touchTooltipData: BarTouchTooltipData(
+                              tooltipBgColor: Colors.transparent,
+                              tooltipPadding: EdgeInsets.zero,
+                              tooltipMargin: 6,
+                              getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                                return BarTooltipItem(
+                                  rod.toY.toInt().toString(),
+                                  const TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w700,
+                                    color: Colors.black87,
+                                  ),
+                                );
+                              },
+                            ),
                           ),
+                          titlesData: FlTitlesData(
+                            leftTitles: AxisTitles(
+                              sideTitles: SideTitles(showTitles: false),
+                            ),
+                            rightTitles: AxisTitles(
+                              sideTitles: SideTitles(
+                                showTitles: true,
+                                interval: step.toDouble(),
+                                reservedSize: 36,
+                                getTitlesWidget: (value, _) {
+                                  final v = value.toInt();
+                                  if (v % step != 0) {
+                                    return const SizedBox.shrink();
+                                  }
+                                  return Text(
+                                    "$v",
+                                    textAlign: TextAlign.right,
+                                    style: const TextStyle(
+                                      fontSize: 11,
+                                      color: Colors.black54,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                            topTitles: AxisTitles(
+                              sideTitles: SideTitles(showTitles: false),
+                            ),
+                            bottomTitles: AxisTitles(
+                              sideTitles: SideTitles(
+                                showTitles: true,
+                                reservedSize: 24,
+                                getTitlesWidget: (value, _) {
+                                  final i = value.toInt();
+                                  if (i < 0 || i >= entries.length) {
+                                    return const SizedBox.shrink();
+                                  }
+                                  return Padding(
+                                    padding: const EdgeInsets.only(top: 4),
+                                    child: Text(
+                                      entries[i].key,
+                                      style: const TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                          ),
+                          barGroups: barGroups,
                         ),
-                      ],
-                    ),
-                  ),
+                        swapAnimationDuration: const Duration(milliseconds: 900),
+                        swapAnimationCurve: Curves.easeOutCubic,
+                      )
+                    : Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: const [
+                            SizedBox(height: 16),
+                            CircularProgressIndicator(
+                              valueColor:
+                                  AlwaysStoppedAnimation<Color>(Color(0xFF6525FE)),
+                              strokeWidth: 3,
+                            ),
+                            SizedBox(height: 12),
+                            Text(
+                              "Waiting for results from quantum computer…",
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: Colors.black54,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
           ),
+
 
           const SizedBox(height: 8),
 
