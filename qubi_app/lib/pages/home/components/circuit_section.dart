@@ -19,7 +19,7 @@ class CircuitSection extends StatefulWidget {
 class _CircuitSectionState extends State<CircuitSection> {
   bool _isSubmitting = false;
   DateTime? _shakeLoadStart;
-  int _minShimmerMs = 1800; // 1.8 seconds minimum
+  final int _minShimmerMs = 1800; // 1.8 seconds minimum
   ExecutionModel? _lastShake;
   bool _requestedLastShake = false;
   bool _loadingLastShake = true;
