@@ -1,0 +1,2 @@
+To run the learn content management dashboard, you need the .env file and service_account.json file in Qubi-Mobile-App/backend/learn_content (same directory as this Readme).
+Reach out to Aarush to get those files, as they contain sensitive information for the Supabase storage and Firestore database.
