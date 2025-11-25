@@ -139,17 +139,11 @@ qc = create_circuit(gates, num_qubits=2, num_clbits=2)
 
 **Functions**:
 
-#### `add_results_new(run_request_id, user_id, circuit_id, elapsed_time, shots, results)`
+#### `add_results(run_request_id, user_id, circuit_id, elapsed_time, shots, results)`
 Add results to run_results collection using run_request_id as document ID.
 - **Parameters**: run_request_id, user_id, circuit_id, elapsed_time, shots, results (Qiskit Result)
 - **Returns**: run_request_id
 - **Stores**: success, circuit_id, user_id, quantum_computer, histograms, shots, elapsed_time, created_at
-
-#### `add_results(doc_id, elapsed_time, results)`
-Legacy function - add results to runs collection with auto-generated ID.
-- **Parameters**: doc_id (circuit_id), elapsed_time, results (Qiskit Result)
-- **Returns**: run_id (auto-generated)
-- **Stores**: circuit_id, quantum_computer, histogram, total_runtime, run_datetime
 
 #### `get_circuit_by_id(circuit_id)`
 Retrieve circuit from Firestore.
