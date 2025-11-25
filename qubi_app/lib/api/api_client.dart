@@ -23,7 +23,7 @@ class ApiClient {
   static Future<String> makeRequest({
     required String userId,
     required Map<String, dynamic> circuit,
-    String quantumComputer = 'ionq_simulator',
+    String quantumComputer = 'ionq',
     int shots = 1000,
   }) async {
     final url = Uri.parse('$_baseUrl/make_request');

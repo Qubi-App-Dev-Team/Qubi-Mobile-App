@@ -23,6 +23,63 @@ class ExecutionModel {
     this.errorMessage, // NEW
   });
 
+  
+  factory ExecutionModel.fromJson(Map<String, dynamic> json) {
+    Map<String, int>? counts;
+    Map<String, double>? probs;
+
+    final bool? success = json['success'];
+
+    // ---- HISTOGRAM COUNTS ----
+    // New schema
+    if (json['counts'] is Map) {
+      counts = Map<String, int>.from(json['counts']);
+    }
+    // Old schema
+    else if (json['histogram_counts'] is Map) {
+      counts = Map<String, int>.from(json['histogram_counts']);
+    }
+
+    // ---- HISTOGRAM PROBABILITIES ----
+    // New schema
+    if (json['probabilities'] is Map) {
+      probs = Map<String, double>.from(json['probabilities']);
+    }
+    // Old schema
+    else if (json['histogram_probabilities'] is Map) {
+      probs = Map<String, double>.from(json['histogram_probabilities']);
+    }
+
+    // ---- FAILURE CASE: CLEAR HISTOGRAMS ----
+    if (success == false) {
+      counts = {};
+      probs = {};
+    }
+
+    // ---- ELAPSED TIME ----
+    final elapsed = json['elapsed_time'] ??
+                    json['elapsed_time_s'] ??
+                    json['time'] ??
+                    0;
+
+    // ---- QUANTUM COMPUTER NAME ----
+    final backendName = json['backend_name'] ?? json['quantum_computer'];
+
+    return ExecutionModel(
+      userId: json['user_id'],
+      createdAt: DateTime.tryParse(json['created_at'] ?? ''),
+      success: success,
+      shots: json['shots'],
+      histogramCounts: counts,
+      histogramProbabilities: probs,
+      circuitId: json['circuit_id'],
+      elapsedTimeS: (elapsed as num).toDouble(),
+      quantumComputer: backendName,
+      errorMessage: json['error_message'], // safe fallback
+    );
+  }
+
+  /*
   factory ExecutionModel.fromJson(Map<String, dynamic> json) {
     // Handle both possible data formats (list of maps OR flat map)
     Map<String, int>? counts;
@@ -68,7 +125,8 @@ class ExecutionModel {
       quantumComputer: json['quantum_computer'],
       errorMessage: json['error_message'], // NEW
     );
-  }
+  }*/
+  
 
   Map<String, dynamic> toJson() {
     final bool? isSuccess = success;
