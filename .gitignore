@@ -3,9 +3,14 @@ venv
 node_modules
 notes.txt
 __pycache__
-
+.venv
 nodesource_setup.sh
 firebase.json
 firebase_options.dart
 
 .idea
+
+results/
+.venv
+
+backend/learn_content/service_account.json
