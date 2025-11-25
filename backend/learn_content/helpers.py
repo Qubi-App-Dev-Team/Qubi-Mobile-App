@@ -1,7 +1,8 @@
-import json
+import json 
 import copy
 import mimetypes
 import os
+import uuid
 from typing import Any, Dict, List, Optional, Tuple
 
 from dotenv import load_dotenv
@@ -13,6 +14,9 @@ from supabase import create_client, Client
 
 SERVICE_ACCOUNT_PATH = "service_account.json"
 CHAPTERS_COLLECTION = "chapters"
+
+# In the future, add other interactive types here (e.g., "Quiz", "Slider", etc.)
+INTERACTIVE_PROMPT_ITEM_TYPES = {"Options"}  # currently only Options blocks are interactive
 
 load_dotenv()
 
@@ -233,6 +237,8 @@ def parse_prompt_component(comp: Dict[str, Any]) -> List[Dict[str, Any]]:
                     "options": options,
                     "answer": answer,
                     "explanation": explanation,
+                    # NOTE: id (if present) stays on the raw entry; we
+                    # don't need it in the normalized view, so we ignore it here
                 }
             )
 
@@ -267,6 +273,8 @@ def build_prompt_component(items: List[Dict[str, Any]]) -> Dict[str, Any]:
                 "answer": answer,
                 "explanation": explanation,
             }
+            # NOTE: We intentionally do NOT assign or modify 'id' here;
+            # IDs are handled only on publish/save, not during editing.
             content.append(opt_dict)
 
     return {
@@ -348,10 +356,49 @@ def export_chapter_to_bytes(chapter: Dict[str, Any], chapter_id: Optional[str] =
     json_bytes = json.dumps(clean, indent=4, ensure_ascii=False).encode("utf-8")
     return filename, json_bytes
 
+def _generate_interactive_id() -> str:
+    """Generate a unique ID for interactive blocks."""
+    return uuid.uuid4().hex
+
+def _ensure_interactive_ids(chapter: Dict[str, Any]) -> None:
+    """
+    Ensure every interactive block has an 'id' field.
+
+    """
+    sections = chapter.get("sections", [])
+    for section in sections:
+        pages = section.get("pages", [])
+        for page in pages:
+            components = page.get("components", [])
+            for comp in components:
+                if not is_prompt_component(comp):
+                    continue
+
+                content_list = comp.get("content", [])
+                if not isinstance(content_list, list):
+                    continue
+
+                for entry in content_list:
+                    if not isinstance(entry, dict):
+                        continue
+
+                    # Options blocks can be keyed by "options" or "Options"
+                    if ("options" in entry) or ("Options" in entry):
+                        # In the future, if prompt items carry a 'type' field,
+                        # we can also check that against INTERACTIVE_PROMPT_ITEM_TYPES.
+                        if "id" not in entry:
+                            entry["id"] = _generate_interactive_id()
+
 
 def save_chapter_to_firestore(chapter_id: Optional[str], chapter: Dict[str, Any]) -> str:
     """Save a chapter to Firestore, incrementing version, and return the document id."""
     chapter = ensure_chapter_structure(chapter)
+
+    # Only handle interactive IDs when "publishing" the chapter.
+    # Treat 'active' and 'published' statuses as published; skip e.g. 'draft'.
+    status = chapter.get("status")
+    if isinstance(status, str) and status.lower() == 'active':
+        _ensure_interactive_ids(chapter)
 
     current_version = int(chapter.get("version", 0))
     chapter["version"] = current_version + 1
