@@ -33,7 +33,7 @@ def get_user_info(user_id):
     user = users_ref.document(user_id).get()
     return user.to_dict()
 
-def add_results_new(results, success: bool = True):
+def add_results_new(results):
     """
     Add results to the 'runs_results' collection.
     """
@@ -45,7 +45,6 @@ def add_results_new(results, success: bool = True):
 
     results.update({
         'created_at': firestore.SERVER_TIMESTAMP,
-        'success': success
     })
     new_run.set(results)
     db.collection("run_requests").document(doc_id).update({

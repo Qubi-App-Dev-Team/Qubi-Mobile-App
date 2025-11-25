@@ -72,13 +72,20 @@ def send_circuit(
     print(f"Results: {res}")
 
     print(f"Saving results to Firebase...")
-    run_id = add_results_new(res, success=True)
+    run_id = add_results_new(res)
     print("run_id: ", run_id)
 
     return run_id
 
-
-""" quantum_computer_name options:
-        ionq: 'ionq_simulator'
-        ibm: ''
-"""
+send_circuit(
+    run_request_id="123",
+    user_id="user_01",
+    circuit_id="circuit_01",
+    circuit={
+        "gates": [{"name": "h", "qubits": [0]}, {"name": "cx", "qubits": [0, 1]}, {"name": "measure", "qubits": [0, 1], "clbits": [0, 1]}],
+        "num_qubits": 2,
+        "num_clbits": 2
+    },
+    quantum_computer_type="ionq",
+    shots=1000
+)
