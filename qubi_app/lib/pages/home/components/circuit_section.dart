@@ -271,7 +271,7 @@ class _CircuitSectionState extends State<CircuitSection> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        "IBM Hanoi (32 qubits)",
+                        "IonQ Aria",
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 14.5,

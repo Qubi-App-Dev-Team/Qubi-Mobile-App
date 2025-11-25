@@ -86,6 +86,11 @@ class StoredUserInfo {
             tempMap['progress'][i]['sections'][j]['latestPage'] = max(tempMap['progress'][i]['sections'][j]['latestPage'], firebaseDoc['progress'][i]['sections'][j]['latestPage']);
           }
         }
+
+        // --------- Preserve user-inputted API keys from Firestore ---------
+        tempMap['ibm_api_tok'] = firebaseDoc['ibm_api_tok'] ?? tempMap['ibm_api_tok'];
+        tempMap['ionq_api_tok'] = firebaseDoc['ionq_api_tok'] ?? tempMap['ionq_api_tok'];
+        // ------------------------------------------------------------------ 
         
         userData = tempMap;
         progress = (userData['progress'] as List)
