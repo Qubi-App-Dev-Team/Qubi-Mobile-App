@@ -46,7 +46,7 @@ def send_circuit(
     print(f"Results: {res}")
 
     print(f"Saving results to Firebase...")
-    run_id = add_results_new(res, success=True)
+    run_id = add_results_new(res)
     print("run_id: ", run_id)
 
     return run_id
