@@ -76,8 +76,27 @@ class _RunPageState extends State<RunPage> {
       final data = snapshot.data() as Map<String, dynamic>;
 
       final rawSuccess = data['success'];
-      final success = rawSuccess is bool ? rawSuccess : true; // default true if missing
+      final success = rawSuccess is bool ? rawSuccess : true;
       final errorMessage = data['error_message'] as String?;
+
+      // ---- HISTOGRAM COUNTS (new + old schema) ----
+      Map<String, int> counts = {};
+      if (data['counts'] is Map) {
+        counts = Map<String, int>.from(data['counts']);
+      } else if (data['histogram_counts'] is Map) {
+        counts = Map<String, int>.from(data['histogram_counts']);
+      }
+
+      // ---- QUANTUM COMPUTER (new + old schema) ----
+      final quantumComputer = data['backend_name'] ??
+                              data['quantum_computer'] ??
+                              "";
+
+      // ---- ELAPSED TIME (new + old schema) ----
+      final elapsed = data['elapsed_time'] ??
+                      data['elapsed_time_s'] ??
+                      data['time'] ??
+                      0;
 
       if (!mounted) return;
 
@@ -86,20 +105,14 @@ class _RunPageState extends State<RunPage> {
         _success = success;
         _errorMessage = errorMessage;
 
-        _elapsedTime = (data['elapsed_time_s'] ?? 0).toDouble();
-        _quantumComputer = data['quantum_computer'] ?? '';
+        _histogramCounts = success ? counts : {};
+        _elapsedTime = (elapsed as num).toDouble();
+        _quantumComputer = quantumComputer;
         _shots = (data['shots'] ?? 0);
-
-        if (success) {
-          _histogramCounts =
-              Map<String, int>.from(data['histogram_counts'] ?? {});
-        } else {
-          // On failure, keep histogram empty
-          _histogramCounts = {};
-        }
       });
     });
   }
+
 
 
   @override

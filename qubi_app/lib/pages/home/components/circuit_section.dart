@@ -87,7 +87,7 @@ class _CircuitSectionState extends State<CircuitSection> {
     "num_clbits": 2,
   };
 
-  static const String _quantumComputer = "ionq_simulator";
+  static const String _quantumComputer = "ionq";
   static const int _shots = 1000;
 
   // -------------------------------------------------------------------------
@@ -271,7 +271,7 @@ class _CircuitSectionState extends State<CircuitSection> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        "IBM Hanoi (32 qubits)",
+                        "IonQ Aria",
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 14.5,

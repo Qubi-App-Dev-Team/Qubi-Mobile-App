@@ -17,7 +17,6 @@ class StoredUserInfo {
 
   static String userID = '';
   static String folderName = 'Users';
-  static String currentRunRequestId = '';
 
   /// Chapter -> progress in [0,1]
   static final ValueNotifier<Map<int, double>> chapterProgressVN =
@@ -77,8 +76,6 @@ class StoredUserInfo {
                     .map((e) => Map<String, dynamic>.from(e as Map))
                     .toList();
         userData['progress'] = progress;
-        currentRunRequestId = userData['currentRunRequestID'];
-        userData.remove('currentRunRequestID');
       }
       else {
         Map<String, dynamic> tempMap = jsonDecode(current)['userInfo'];
@@ -90,16 +87,20 @@ class StoredUserInfo {
             tempMap['progress'][i]['sections'][j]['latestPage'] = max(tempMap['progress'][i]['sections'][j]['latestPage'], firebaseDoc['progress'][i]['sections'][j]['latestPage']);
           }
         }
+
+        // --------- Preserve user-inputted API keys from Firestore ---------
+        tempMap['ibm_api_tok'] = firebaseDoc['ibm_api_tok'] ?? tempMap['ibm_api_tok'];
+        tempMap['ionq_api_tok'] = firebaseDoc['ionq_api_tok'] ?? tempMap['ionq_api_tok'];
+        // ------------------------------------------------------------------ 
+        
         userData = tempMap;
         progress = (userData['progress'] as List)
                     .map((e) => Map<String, dynamic>.from(e as Map))
                     .toList();
         userData['progress'] = progress;
-        currentRunRequestId = userData['currentRunRequestID'];
         try {await documentReference?.set(userData);} 
         catch (_) {}
         userData['email'] = currUser.email;
-        userData.remove('currentRunRequestID');
         if (kDebugMode) {
             debugPrint('[StoredUserInfo] Loaded user data from existing local file.');
           }
@@ -127,12 +128,10 @@ class StoredUserInfo {
 
       userData['progress'] = progress;
       userData['email'] = currUser.email;
-      userData['currentRunRequestID'] = currentRunRequestId;
 
       try {
         await documentReference?.set(userData);
       } catch (_) {}
-      userData.remove('currentRunRequestID');
       userFile = await _ensureLocalFile();
       await _writeSnapshotToDisk();
     }
@@ -181,19 +180,6 @@ class StoredUserInfo {
   // --------------------------
   // WRITE APIs (mutate + notify)
   // --------------------------
-
-
-  static Future<void> writeCurrentRunRequest({required String currentID}) async {
-    currentRunRequestId = currentID;
-    userData['currentRunRequestID'] = currentRunRequestId;
-    try {documentReference?.set(userData);}
-    catch(e){
-      if (kDebugMode) {
-            debugPrint('Firestore write failed, persisting locally. $e');
-          }
-      }
-    userData.remove('currentRunRequestID');
-   }
 
   static Future<void> updateProgress({
     required int pageNum,
