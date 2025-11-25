@@ -33,7 +33,7 @@ def get_user_info(user_id):
     user = users_ref.document(user_id).get()
     return user.to_dict()
 
-def add_results_new(results):
+def add_results(results):
     """
     Add results to the 'runs_results' collection.
     """

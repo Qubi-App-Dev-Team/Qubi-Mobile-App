@@ -1,5 +1,5 @@
-from utils_new.send_ionq import get_ionq_results
-from utils_new.send_ibm import get_ibm_results
+from utils.send_ionq import get_ionq_results
+from utils.send_ibm import get_ibm_results
 from qiskit import QuantumCircuit
 
 # circuit -> shots -> backend_name -> job results to send to firebase
