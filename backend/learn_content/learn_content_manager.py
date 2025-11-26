@@ -1,9 +1,19 @@
+# Need to include warnings for deleting images or replacing image components
+# Need to modify titles of editing pages
+# Need to double check chapter renumbering logic
 import streamlit as st
 from typing import Any, Dict, List, Optional
 
-from helpers import (
+from firebase_logic import (
     get_chapter_list,
     load_chapter,
+    save_chapter_to_firestore,
+    soft_delete_chapter,
+    unarchive_chapter,
+    swap_chapter_numbers,
+)
+
+from chapter_processing import (
     ensure_chapter_structure,
     add_section,
     delete_section,
@@ -16,15 +26,17 @@ from helpers import (
     delete_component,
     import_chapter_from_json,
     export_chapter_to_bytes,
-    save_chapter_to_firestore,
-    soft_delete_chapter,
-    unarchive_chapter,
-    upload_image_to_supabase,
 )
+
+from storage_utils import upload_image_to_supabase, delete_image_from_supabase_by_url
 
 
 def init_session() -> None:
-    """Initialize session_state variables."""
+    """
+    Inputs: None.
+    Output: Initializes Streamlit session_state keys if missing.
+    Note: Ensures consistent state for mode, chapter, selection, and publish mode.
+    """
     if "mode" not in st.session_state:
         st.session_state.mode = "home"
     if "chapter" not in st.session_state:
@@ -37,16 +49,26 @@ def init_session() -> None:
         st.session_state.selected_page = 0
     if "uid_counter" not in st.session_state:
         st.session_state.uid_counter = 0
+    if "publish_mode" not in st.session_state:
+        st.session_state.publish_mode = "Create new version"
 
 
 def new_uid() -> str:
-    """Return a new unique id string for components."""
+    """
+    Inputs: None.
+    Output: Sequential string UID for uniquely identifying components.
+    Note: Backed by a simple integer counter in session_state.
+    """
     st.session_state.uid_counter += 1
     return str(st.session_state.uid_counter)
 
 
 def ensure_component_uids(chapter: Dict[str, Any]) -> None:
-    """Ensure each top-level component has a 'uid' for stable widget keys."""
+    """
+    Inputs: Chapter dict.
+    Output: Mutates chapter to ensure each top-level component has a 'uid'.
+    Note: Used to provide stable Streamlit widget keys across re-renders.
+    """
     if not chapter:
         return
     chapter = ensure_chapter_structure(chapter)
@@ -58,8 +80,12 @@ def ensure_component_uids(chapter: Dict[str, Any]) -> None:
 
 
 def main() -> None:
+    """
+    Inputs: None.
+    Output: Runs the Streamlit app by selecting home or editor view.
+    Note: Entry point guarded at bottom with if __name__ == "__main__".
+    """
     init_session()
-
     st.set_page_config(page_title="Qubi Learn Content Manager", layout="wide")
 
     if st.session_state.mode == "home":
@@ -69,7 +95,11 @@ def main() -> None:
 
 
 def show_home_view() -> None:
-    """Render the home view listing chapters and draft upload."""
+    """
+    Inputs: None (uses global session_state and Firestore data).
+    Output: Renders chapter list with version dropdowns and reordering controls.
+    Note: Groups docs by chapter number and uses 'latest' to pick default version.
+    """
     st.title("Qubi Learn Content Manager")
 
     chapters = get_chapter_list()
@@ -78,43 +108,99 @@ def show_home_view() -> None:
     if not chapters:
         st.info("No chapters found.")
     else:
+        grouped: Dict[int, List[Dict[str, Any]]] = {}
         for ch in chapters:
-            cols = st.columns([3, 2, 2, 1, 1])
-            title = ch.get("title", "")
-            number = ch.get("number", "")
-            diff = ch.get("diff", "")
-            status = ch.get("status", "active")
-            version = ch.get("version", 0)
+            num = int(ch.get("number", 0))
+            grouped.setdefault(num, []).append(ch)
 
+        sorted_numbers = sorted(grouped.keys())
+
+        for idx, chapter_number in enumerate(sorted_numbers):
+            versions = grouped[chapter_number]
+            versions_sorted = sorted(
+                versions,
+                key=lambda c: int(c.get("version", 0)),
+                reverse=True,
+            )
+
+            default_idx = 0
+            for i, v in enumerate(versions_sorted):
+                if v.get("latest", False):
+                    default_idx = i
+                    break
+
+            cols = st.columns([4, 3, 2, 1, 1, 1])
             with cols[0]:
-                st.markdown(f"**{number}: {title}**")
-                st.caption(f"Difficulty: {diff} | Version: {version} | Status: {status}")
+                version_options = list(range(len(versions_sorted)))
+
+                def _version_label(i: int) -> str:
+                    """
+                    Inputs: Index into versions_sorted.
+                    Output: Human-readable label for version selectbox.
+                    Note: Shows version number, status, and latest tag if applicable.
+                    """
+                    vdoc = versions_sorted[i]
+                    vnum = vdoc.get("version", 0)
+                    status = vdoc.get("status", "active")
+                    latest_flag = " (latest)" if vdoc.get("latest", False) else ""
+                    return f"v{vnum} [{status}]{latest_flag}"
+
+                selected_idx = st.selectbox(
+                    f"Chapter {chapter_number} versions",
+                    options=version_options,
+                    format_func=_version_label,
+                    index=default_idx,
+                    key=f"chapter-{chapter_number}-version-select",
+                )
+
+            selected_doc = versions_sorted[selected_idx]
+            title = selected_doc.get("title", "")
+            diff = selected_doc.get("diff", "")
+            status = selected_doc.get("status", "active")
+            version = selected_doc.get("version", 0)
+
             with cols[1]:
-                if st.button("Edit", key=f"edit-{ch['id']}"):
-                    chapter = load_chapter(ch["id"])
+                st.markdown(f"**{chapter_number}: {title}**")
+                st.caption(
+                    f"Difficulty: {diff} | Version: {version} | Status: {status}"
+                )
+
+            with cols[2]:
+                if st.button("Edit this version", key=f"edit-{selected_doc['id']}"):
+                    chapter = load_chapter(selected_doc["id"])
                     if chapter is not None:
                         st.session_state.chapter = chapter
-                        st.session_state.chapter_id = ch["id"]
+                        st.session_state.chapter_id = selected_doc["id"]
                         ensure_component_uids(st.session_state.chapter)
                         st.session_state.selected_section = 0
                         st.session_state.selected_page = 0
                         st.session_state.mode = "edit"
+                        st.session_state.publish_mode = "Update existing version"
                         st.rerun()
-            with cols[2]:
+
+            with cols[3]:
                 if status == "archived":
-                    if st.button("Unarchive", key=f"unarchive-{ch['id']}"):
-                        unarchive_chapter(ch["id"])
-                        st.success("Chapter unarchived.")
+                    if st.button("Unarchive", key=f"unarchive-{selected_doc['id']}"):
+                        unarchive_chapter(selected_doc["id"])
+                        st.success("Version unarchived.")
                         st.rerun()
                 else:
-                    if st.button("Archive", key=f"archive-{ch['id']}"):
-                        soft_delete_chapter(ch["id"])
-                        st.success("Chapter archived.")
+                    if st.button("Archive", key=f"archive-{selected_doc['id']}"):
+                        soft_delete_chapter(selected_doc["id"])
+                        st.success("Version archived.")
                         st.rerun()
-            with cols[3]:
-                pass
+
             with cols[4]:
-                pass
+                if st.button("↑", key=f"chapter-up-{chapter_number}") and idx > 0:
+                    prev_number = sorted_numbers[idx - 1]
+                    swap_chapter_numbers(chapter_number, prev_number)
+                    st.rerun()
+
+            with cols[5]:
+                if st.button("↓", key=f"chapter-down-{chapter_number}") and idx < len(sorted_numbers) - 1:
+                    next_number = sorted_numbers[idx + 1]
+                    swap_chapter_numbers(chapter_number, next_number)
+                    st.rerun()
 
     st.markdown("---")
 
@@ -122,14 +208,22 @@ def show_home_view() -> None:
 
     with col1:
         if st.button("Add New Chapter"):
+            chapters = get_chapter_list()
+            if chapters:
+                max_number = max(int(c.get("number", 0)) for c in chapters)
+                new_number = max_number + 1
+            else:
+                new_number = 1
+
             chapter = ensure_chapter_structure(
                 {
                     "title": "",
                     "diff": "",
-                    "number": 0,
+                    "number": new_number,
                     "sections": [],
                     "status": "active",
                     "version": 0,
+                    "latest": False,
                 }
             )
             st.session_state.chapter = chapter
@@ -138,11 +232,16 @@ def show_home_view() -> None:
             st.session_state.selected_section = 0
             st.session_state.selected_page = 0
             st.session_state.mode = "edit"
+            st.session_state.publish_mode = "Create new version"
             st.rerun()
 
     with col2:
         st.subheader("Open JSON Draft")
-        uploaded = st.file_uploader("Upload chapter draft JSON", type=["json"], key="draft_upload")
+        uploaded = st.file_uploader(
+            "Upload chapter draft JSON",
+            type=["json"],
+            key="draft_upload",
+        )
         if uploaded is not None:
             chapter = import_chapter_from_json(uploaded)
             chapter_id = chapter.get("chapter_id")
@@ -152,16 +251,25 @@ def show_home_view() -> None:
             st.session_state.selected_section = 0
             st.session_state.selected_page = 0
             st.session_state.mode = "edit"
+            st.session_state.publish_mode = (
+                "Update existing version" if chapter_id else "Create new version"
+            )
             st.rerun()
 
 
 def show_editor_view() -> None:
-    """Render the chapter editor view."""
+    """
+    Inputs: None (relies on session_state.chapter and chapter_id).
+    Output: Renders and manages the chapter editor view.
+    Note: Handles sections, pages, components, and publish actions.
+    """
     chapter = st.session_state.chapter
     chapter_id = st.session_state.chapter_id
 
     if chapter is None:
         st.session_state.mode = "home"
+        st.session_state.chapter = None
+        st.session_state.chapter_id = None
         st.rerun()
 
     chapter = ensure_chapter_structure(chapter)
@@ -176,9 +284,14 @@ def show_editor_view() -> None:
     with top_cols[1]:
         st.subheader("Editing Chapter")
 
+    chapter_number = int(chapter.get("number", 0))
+    version_num = int(chapter.get("version", 0))
+    latest_flag = chapter.get("latest", False)
+
     chapter["title"] = st.text_input("Title", value=chapter.get("title", ""))
     chapter["diff"] = st.text_input("Difficulty", value=chapter.get("diff", ""))
-    chapter["number"] = st.number_input("Number", value=int(chapter.get("number", 0)), step=1)
+    st.markdown(f"**Chapter number:** {chapter_number}")
+    st.markdown(f"**Version:** {version_num} {'(latest)' if latest_flag else ''}")
 
     st.markdown("---")
 
@@ -213,7 +326,11 @@ def show_editor_view() -> None:
 
         st.markdown("### Selected Section")
 
-        section["title"] = st.text_input("Section Title", value=section.get("title", ""), key=f"sec-title-{cur_sec_idx}")
+        section["title"] = st.text_input(
+            "Section Title",
+            value=section.get("title", ""),
+            key=f"sec-title-{cur_sec_idx}",
+        )
         section["description"] = st.text_area(
             "Section Description",
             value=section.get("description", ""),
@@ -286,11 +403,30 @@ def show_editor_view() -> None:
     col_left, col_right = st.columns(2)
 
     with col_left:
+        st.session_state.publish_mode = st.radio(
+            "Publish mode",
+            options=["Update existing version", "Create new version"],
+            index=0 if chapter_id else 1,
+            key="publish_mode_radio",
+        )
+
         if st.button("Publish to Firestore"):
-            doc_id = save_chapter_to_firestore(chapter_id, chapter)
-            st.session_state.chapter_id = doc_id
-            st.session_state.chapter = chapter
-            st.success(f"Published chapter (id: {doc_id}).")
+            create_new_version = (st.session_state.publish_mode == "Create new version")
+            doc_id = save_chapter_to_firestore(
+                chapter_id,
+                chapter,
+                create_new_version=create_new_version,
+            )
+            saved_chapter = load_chapter(doc_id)
+
+            if saved_chapter is not None:
+                ensure_component_uids(saved_chapter)
+                st.session_state.chapter_id = doc_id
+                st.session_state.chapter = saved_chapter
+                st.success(f"Published chapter version (id: {doc_id}).")
+                st.rerun()
+            else:
+                st.error("Failed to reload chapter after saving.")
 
     with col_right:
         filename, json_bytes = export_chapter_to_bytes(chapter, chapter_id)
@@ -310,7 +446,11 @@ def render_page_components(
     section_index: int,
     page_index: int,
 ) -> None:
-    """Render and edit components for a given page."""
+    """
+    Inputs: Chapter dict, optional chapter_id, and section/page indexes.
+    Output: Renders and mutates components for the selected page.
+    Note: Handles image replacement with optional Supabase deletion warnings.
+    """
     sections = chapter["sections"]
     section = sections[section_index]
     page = section["pages"][page_index]
@@ -371,14 +511,27 @@ def render_page_components(
                     type=["png", "jpg", "jpeg"],
                     key=f"comp-image-upload-{uid}",
                 )
-                if img_file is not None and st.button("Save image", key=f"comp-image-save-{uid}"):
-                    try:
-                        new_url = upload_image_to_supabase(img_file, existing_url=url or None)
-                        comp["content"] = new_url
-                        st.session_state.chapter = chapter
-                        st.rerun()
-                    except Exception as e:
-                        st.error(f"Image upload failed: {e}")
+                if img_file is not None:
+                    st.info(
+                        "If you delete the previous image, it will be permanently "
+                        "removed from storage. If that image is used in other "
+                        "versions, those versions will lose it as well."
+                    )
+                    delete_prev = st.checkbox(
+                        "Delete previous image from Supabase (if any).",
+                        value=False,
+                        key=f"comp-image-delete-prev-{uid}",
+                    )
+                    if st.button("Save image", key=f"comp-image-save-{uid}"):
+                        try:
+                            new_url = upload_image_to_supabase(img_file)
+                            if delete_prev and url:
+                                delete_image_from_supabase_by_url(url)
+                            comp["content"] = new_url
+                            st.session_state.chapter = chapter
+                            st.rerun()
+                        except Exception as e:
+                            st.error(f"Image upload failed: {e}")
 
             elif ctype_lower == "video":
                 url = comp.get("content", "")
@@ -419,7 +572,11 @@ def render_prompt_component(
     component_index: int,
     comp: Dict[str, Any],
 ) -> None:
-    """Render and edit a Prompt component, including inner items."""
+    """
+    Inputs: Chapter dict, indexes, and Prompt component dict.
+    Output: Renders and mutates nested prompt items for that component.
+    Note: Includes optional deletion warnings when replacing images inside prompts.
+    """
     uid = comp["uid"]
     items = parse_prompt_component(comp)
 
@@ -472,15 +629,28 @@ def render_prompt_component(
                 type=["png", "jpg", "jpeg"],
                 key=f"prompt-image-upload-{uid}-{idx}",
             )
-            if img_file is not None and st.button("Save prompt image", key=f"prompt-image-save-{uid}-{idx}"):
-                try:
-                    new_url = upload_image_to_supabase(img_file, existing_url=url or None)
-                    item["content"] = new_url
-                    comp_new = build_prompt_component(items)
-                    _update_prompt_component(chapter, section_index, page_index, component_index, comp_new)
-                    st.rerun()
-                except Exception as e:
-                    st.error(f"Image upload failed: {e}")
+            if img_file is not None:
+                st.info(
+                    "If you delete the previous image, it will be permanently "
+                    "removed from storage. If that image is used in other "
+                    "versions, those versions will lose it as well."
+                )
+                delete_prev = st.checkbox(
+                    "Delete previous image from Supabase (if any).",
+                    value=False,
+                    key=f"prompt-image-delete-prev-{uid}-{idx}",
+                )
+                if st.button("Save prompt image", key=f"prompt-image-save-{uid}-{idx}"):
+                    try:
+                        new_url = upload_image_to_supabase(img_file)
+                        if delete_prev and url:
+                            delete_image_from_supabase_by_url(url)
+                        item["content"] = new_url
+                        comp_new = build_prompt_component(items)
+                        _update_prompt_component(chapter, section_index, page_index, component_index, comp_new)
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"Image upload failed: {e}")
 
         elif itype == "Video":
             url = item.get("content", "")
@@ -560,7 +730,11 @@ def _update_prompt_component(
     component_index: int,
     new_comp: Dict[str, Any],
 ) -> None:
-    """Update a Prompt component in the chapter, preserving UID."""
+    """
+    Inputs: Chapter dict, location indexes, and new Prompt component dict.
+    Output: Mutates chapter to replace the target Prompt component.
+    Note: Preserves the component's existing UID value.
+    """
     sections = chapter["sections"]
     section = sections[section_index]
     page = section["pages"][page_index]
