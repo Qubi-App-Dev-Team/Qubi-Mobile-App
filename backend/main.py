@@ -17,7 +17,7 @@ from google.cloud.firestore_v1 import DocumentSnapshot
 from google.cloud.firestore_v1._helpers import DatetimeWithNanoseconds
 from datetime import datetime
 # send_circuit()
-from quantum_new import send_circuit
+from quantum import send_circuit
 
 # Models
 class MakeRequestDTO(BaseModel):
@@ -103,7 +103,7 @@ async def make_request(dto: MakeRequestDTO, bg: BackgroundTasks):
         dto.quantum_computer,         
         dto.shots,                 
     )
-    print("run_reques_id" + str(run_request_id))
+    print("run_request_id" + str(run_request_id))
     return {"run_request_id": run_request_id}
 
 

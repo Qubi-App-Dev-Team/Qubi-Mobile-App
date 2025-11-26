@@ -1,9 +1,9 @@
 import time
 import os
 
-from utils_new.firebase_rw import add_results_new, get_user_info
-from utils_new.create_circuit import create_circuit
-from utils_new.send_qc import get_circuit_results
+from utils.firebase_rw import add_results, get_user_info
+from utils.create_circuit import create_circuit
+from utils.send_qc import get_circuit_results
 
 from dotenv import load_dotenv
 import firebase_admin
@@ -77,7 +77,7 @@ def send_circuit(
 
     print(f"Results: {res}")
     print(f"Saving results to Firebase...")
-    run_id = add_results_new(res)
+    run_id = add_results(res)
     print("run_id: ", run_id)
 
     return run_id
