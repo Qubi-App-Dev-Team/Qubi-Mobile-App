@@ -11,6 +11,7 @@ import firebase_admin
 from firebase_admin import credentials, firestore
 
 from supabase import create_client, Client
+from urllib.parse import urlparse
 
 SERVICE_ACCOUNT_PATH = "service_account.json"
 CHAPTERS_COLLECTION = "chapters"
@@ -22,7 +23,7 @@ load_dotenv()
 
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
-SUPABASE_BUCKET = os.getenv("SUPABASE_BUCKET", "qubi_images")
+SUPABASE_BUCKET = "qubi_images"
 
 supabase: Optional[Client] = None
 if SUPABASE_URL and SUPABASE_KEY:
@@ -466,21 +467,8 @@ def upload_image_to_supabase(uploaded_file, existing_url: Optional[str] = None) 
         expires_in,
     )
 
-    signed_url: Optional[str] = None
-    data = getattr(signed_resp, "data", None)
-    if isinstance(data, dict):
-        signed_url = data.get("signedURL") or data.get("signed_url")
-
-    if not signed_url and isinstance(signed_resp, dict):
-        signed_url = signed_resp.get("signedURL") or signed_resp.get("signed_url")
-
-    if not signed_url and hasattr(signed_resp, "signed_url"):
-        signed_url = getattr(signed_resp, "signed_url")
-
-    if not signed_url:
-        raise RuntimeError("Supabase did not return a signed URL.")
-
-    if existing_url:
+    signed_url = signed_resp['signedURL']
+    if existing_url and file_path not in existing_url:
         try:
             delete_image_from_supabase_by_url(existing_url)
         except Exception:
@@ -493,8 +481,6 @@ def delete_image_from_supabase_by_url(url: Optional[str]) -> None:
     """Delete an image from Supabase using its signed URL."""
     if supabase is None or not url:
         return
-
-    from urllib.parse import urlparse
 
     parsed = urlparse(url)
     path = parsed.path
