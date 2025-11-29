@@ -46,10 +46,10 @@ class HomePage extends StatelessWidget {
                 SizedBox(
                   height: 325,
                   child: ListView(
-                    children: const [
-                      QubiCard(title: "Qubi v1", qubiColor: Color(0xFF66E3C4)),
-                      QubiCard(title: "Qubi v1", qubiColor: Color(0xFF9D6CFF)),
-                      QubiCard(title: "Qubi v1", qubiColor: Colors.blue),
+                    children: [
+                      QubiCard(title: "Qubi v1", qubiColor: const Color(0xFF66E3C4), onGatePressed: (gateType) => print("Pressed: $gateType"),),
+                      QubiCard(title: "Qubi v1", qubiColor: const Color(0xFF9D6CFF), onGatePressed: (gateType) => print("Pressed: $gateType"),),
+                      QubiCard(title: "Qubi v1", qubiColor: Colors.blue, onGatePressed: (gateType) => print("Pressed: $gateType"),),
                     ],
                   ),
                 ),
