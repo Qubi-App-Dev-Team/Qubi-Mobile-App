@@ -164,7 +164,7 @@ class _ExecHistoryPageState extends State<ExecHistoryPage> {
       onTap: () {
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (_) => RunPage(execution: exec, gates: [], circuitDepth: 0)),
+          MaterialPageRoute(builder: (_) => RunPage(execution: exec)),
         );
       },
       child: Container(

@@ -146,7 +146,7 @@ class _CircuitSectionState extends State<CircuitSection> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => RunPage(execution: executionData[1], gates: [], circuitDepth: 0),
+                          builder: (_) => RunPage(execution: executionData[1]),
                         ),
                       );
                     },
@@ -344,7 +344,7 @@ class _CircuitSectionState extends State<CircuitSection> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => RunPage(execution: executionData[1], gates: gates, circuitDepth: circuitDepth),
+                        builder: (_) => RunPage(execution: executionData[1]),
                       ),
                     );
                   } catch (e) {
