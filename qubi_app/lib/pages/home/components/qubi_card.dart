@@ -3,9 +3,10 @@ import 'package:flutter/material.dart';
 class QubiCard extends StatelessWidget {
   final String title;
   final Color qubiColor;
-  final Function(String gateType) onGatePressed;
+  final int qubitIndex;
+  final Function(String gateType, int qubitIndex) onGatePressed;
 
-  const QubiCard({super.key, required this.title, required this.qubiColor, required this.onGatePressed});
+  const QubiCard({super.key, required this.title, required this.qubiColor, required this.qubitIndex, required this.onGatePressed});
 
   @override
   Widget build(BuildContext context) {
@@ -63,19 +64,19 @@ class QubiCard extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  Expanded(child: QubiGateButton(label: "X",  topLeft: true,  onPressed: () => onGatePressed("x"))),
-                  Expanded(child: QubiGateButton(label: "Y",  onPressed: () => onGatePressed("y"))),
-                  Expanded(child: QubiGateButton(label: "Z",  onPressed: () => onGatePressed("z"))),
-                  Expanded(child: QubiGateButton(label: "T",  onPressed: () => onGatePressed("t"))),
-                  Expanded(child: QubiGateButton(label: "T*", onPressed: () => onGatePressed("t*"))),
-                  Expanded(child: QubiGateButton(label: "H",  topRight: true, onPressed: () => onGatePressed("h"))),
+                  Expanded(child: QubiGateButton(label: "X",  topLeft: true,  onPressed: () => onGatePressed("x", qubitIndex))),
+                  Expanded(child: QubiGateButton(label: "Y",  onPressed: () => onGatePressed("y", qubitIndex))),
+                  Expanded(child: QubiGateButton(label: "Z",  onPressed: () => onGatePressed("z", qubitIndex))),
+                  Expanded(child: QubiGateButton(label: "T",  onPressed: () => onGatePressed("t", qubitIndex))),
+                  Expanded(child: QubiGateButton(label: "T*", onPressed: () => onGatePressed("t*", qubitIndex))),
+                  Expanded(child: QubiGateButton(label: "H",  topRight: true, onPressed: () => onGatePressed("h", qubitIndex))),
                 ],
               ),
               Row(
                 children: [
-                  Expanded(flex: 2, child: QubiGateButton(label: "CNOT",  bottomLeft: true, onPressed: () => onGatePressed("cx"))),
-                  Expanded(flex: 3, child: QubiGateButton(label: "Measure", onPressed: () => onGatePressed("measure"))),
-                  Expanded(flex: 1, child: QubiGateButton(label: "⌄", bottomRight: true, onPressed: () { print("More options or delete"); })),
+                  Expanded(flex: 2, child: QubiGateButton(label: "CNOT",  bottomLeft: true, onPressed: () => onGatePressed("cx", qubitIndex))),
+                  Expanded(flex: 3, child: QubiGateButton(label: "Measure", onPressed: () { print("Needs Something"); })),
+                  Expanded(flex: 1, child: QubiGateButton(label: "⌄", bottomRight: true, onPressed: () { print("Needs Something"); })),
                 ],
               ),
             ],

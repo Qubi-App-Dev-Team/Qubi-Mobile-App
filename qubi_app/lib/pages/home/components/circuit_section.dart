@@ -13,10 +13,11 @@ class CircuitSection extends StatefulWidget {
   const CircuitSection({super.key});
 
   @override
-  State<CircuitSection> createState() => _CircuitSectionState();
+  State<CircuitSection> createState() => CircuitSectionState();
 }
 
-class _CircuitSectionState extends State<CircuitSection> {
+class CircuitSectionState extends State<CircuitSection> {
+  List<Gate> _gates = [];
   late Future<List<Gate>> _futureGates;
   int circuitDepth = 0;
   late ScrollController _scrollController = ScrollController();
@@ -59,14 +60,37 @@ class _CircuitSectionState extends State<CircuitSection> {
     return nextFreeColumn.values.fold(0, (a, b) => math.max(a, b)); // return depth of circuit
   }
 
+  void addGate(String type, List<int> qubits) {
+    setState(() {
+      _gates.add(Gate(type: type, qubits: qubits, position: 0));
+      circuitDepth = processGates(_gates);
+    });
+
+    Future.delayed(const Duration(milliseconds: 50), () {
+      if (_scrollController.hasClients) {
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      }
+    });
+  }
+
+
   @override // init function with reading gates + getting depth
   void initState() {
     super.initState();
     _scrollController = ScrollController();
-    _futureGates = loadCircuit().then((gates) {
-      if (gates.isEmpty) throw Exception('No gates exist');
-      return gates;
+    loadCircuit().then((gates) {
+      setState(() {
+        _gates = gates;
+      });
     });
+    // _futureGates = loadCircuit().then((gates) {
+    //   if (gates.isEmpty) throw Exception('No gates exist');
+    //   return gates;
+    // });
   }
 
   @override // dispose to close scroll
@@ -219,34 +243,7 @@ class _CircuitSectionState extends State<CircuitSection> {
         ),
 
         // Circuit SVG image
-        FutureBuilder<List<Gate>>(
-          future: _futureGates,
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
-            }
-
-            if (snapshot.hasError) {
-              return Text('Error: ${snapshot.error}', style: TextStyle(color: Colors.red));
-            }
-
-            final gates = snapshot.data;
-            if (gates == null || gates.isEmpty) {
-              return const Text('No circuit data found');
-            }
-
-            return SizedBox (
-              width: double.infinity,
-              child: SingleChildScrollView(
-                  controller: _scrollController,
-                  scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
-                  physics: const BouncingScrollPhysics(),
-                  child: CircuitView(gates: gates, circuitDepth: circuitDepth),
-                ),
-            );
-          },
-        ),
+        buildCircuitDisplay(),
 
         // 🔹 Bottom gradient "Select Executor"
         Container(
@@ -339,7 +336,7 @@ class _CircuitSectionState extends State<CircuitSection> {
 
                   // navigate to RunPage with valid gates
                   try {
-                    final gates = await _futureGates;
+                    final gates = _gates;
                     if (!context.mounted) return;
                     Navigator.push(
                       context,
@@ -420,5 +417,25 @@ class _CircuitSectionState extends State<CircuitSection> {
         ],
       ),
     );
+  }
+
+  Widget buildCircuitDisplay() {
+    if (_gates.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.all(16),
+        child: Text('no circuit', style: TextStyle(fontSize: 14, color: Colors.black54)),
+      );
+    } else {
+      return SizedBox (
+        width: double.infinity,
+        child: SingleChildScrollView(
+          controller: _scrollController,
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
+          physics: const BouncingScrollPhysics(),
+          child: CircuitView(gates: _gates, circuitDepth: circuitDepth),
+        ),
+      );
+    }
   }
 }

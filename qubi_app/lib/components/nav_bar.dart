@@ -17,10 +17,10 @@ class _NavBarState extends State<NavBar> {
   int _selectedIndex = 0; //index of _pages to nav to
 
   // List of pages possible to navigate to
-  final List<Widget> _pages = const [
+  final List<Widget> _pages = [
     HomePage(), //home
-    AllChaptersPage(),
-    ProfilePage(),
+    const AllChaptersPage(),
+    const ProfilePage(),
   ];
 
   // Image icons for each page

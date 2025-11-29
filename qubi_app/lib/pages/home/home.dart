@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:qubi_app/pages/home/components/qubi_card.dart';
-// import 'package:qubi_app/pages/home/components/circuit_section.dart';
+import 'package:qubi_app/pages/home/components/circuit_section.dart';
 import 'package:qubi_app/pages/home/components/collapsible_section.dart';
 
 class HomePage extends StatelessWidget {
-  const HomePage({super.key});
+  HomePage({super.key});
+
+  final GlobalKey<CircuitSectionState> circuitKey =
+      GlobalKey<CircuitSectionState>();
 
   @override
   Widget build(BuildContext context) {
@@ -47,9 +50,31 @@ class HomePage extends StatelessWidget {
                   height: 325,
                   child: ListView(
                     children: [
-                      QubiCard(title: "Qubi v1", qubiColor: const Color(0xFF66E3C4), onGatePressed: (gateType) => print("Pressed: $gateType"),),
-                      QubiCard(title: "Qubi v1", qubiColor: const Color(0xFF9D6CFF), onGatePressed: (gateType) => print("Pressed: $gateType"),),
-                      QubiCard(title: "Qubi v1", qubiColor: Colors.blue, onGatePressed: (gateType) => print("Pressed: $gateType"),),
+                      QubiCard(
+                        title: "Qubi v1",
+                        qubiColor: const Color(0xFF66E3C4),
+                        qubitIndex: 0,
+                        onGatePressed: (String gateType, int qubitIndex) {
+                          List<int> qubits = gateType == "cx"
+                              ? (qubitIndex == 0 ? [0,1] : [1,0])
+                              : [qubitIndex];
+
+                          circuitKey.currentState?.addGate(gateType, qubits);
+                        },
+                      ),
+                      QubiCard(
+                        title: "Qubi v1",
+                        qubiColor: const Color(0xFF9D6CFF),
+                        qubitIndex: 1,
+                        onGatePressed: (String gateType, int qubitIndex) {
+                          List<int> qubits = gateType == "cx"
+                              ? (qubitIndex == 0 ? [0,1] : [1,0])
+                              : [qubitIndex];
+
+                          circuitKey.currentState?.addGate(gateType, qubits);
+                        },
+                      ),
+                      // QubiCard(title: "Qubi v1", qubiColor: Colors.blue, qubitIndex: 2, onGatePressed: (gateType, qubit) => print("Pressed: $gateType"),),
                     ],
                   ),
                 ),
@@ -59,7 +84,7 @@ class HomePage extends StatelessWidget {
           ),
 
           // 🟣 Bottom drawer
-          const CircuitBottomDrawer(),
+          CircuitBottomDrawer(circuitKey: circuitKey),
         ],
       ),
     );
