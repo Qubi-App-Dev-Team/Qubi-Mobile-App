@@ -287,7 +287,7 @@ class _CircuitSectionState extends State<CircuitSection> {
           ),
         ),
 
-        // Circuit SVG image
+        // Circuit SVG builder
         FutureBuilder<List<Gate>>(
           future: _futureGates,
           builder: (context, snapshot) {
