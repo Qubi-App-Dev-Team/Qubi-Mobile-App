@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:qubi_app/components/app_colors.dart';
+import 'package:qubi_app/assets/app_colors.dart';
 import 'package:qubi_app/pages/story/story_page.dart';
 
 class ExecDetailPage extends StatelessWidget {
@@ -91,7 +91,7 @@ class ExecDetailPage extends StatelessWidget {
                       vertical: 5,
                     ),
                     decoration: BoxDecoration(
-                      color: badgeColor.withOpacity(0.15),
+                      color: badgeColor.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(

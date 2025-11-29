@@ -108,7 +108,7 @@ class HomePage extends StatelessWidget {
         margin: const EdgeInsets.all(1),
         child: SvgPicture.asset(
           assetPath,
-          color: const Color(0xff000000),
+          colorFilter: const ColorFilter.mode(Color(0xff000000), BlendMode.srcIn),
           width: 20,
           height: 20,
           fit: BoxFit.scaleDown,

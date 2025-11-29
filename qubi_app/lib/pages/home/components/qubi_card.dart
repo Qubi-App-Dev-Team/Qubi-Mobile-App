@@ -127,8 +127,8 @@ class QubiGateButton extends StatelessWidget {
         child: InkWell(
           onTap: onPressed,
           borderRadius: borderRadius,
-          splashColor: Colors.teal.withOpacity(0.2),
-          highlightColor: Colors.teal.withOpacity(0.1),
+          splashColor: Colors.teal.withValues(alpha: 0.2),
+          highlightColor: Colors.teal.withValues(alpha: 0.1),
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: 12),
             child: Center(

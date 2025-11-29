@@ -85,7 +85,7 @@ class AuthGate extends StatelessWidget {
               );
             }
             if (initSnap.hasError) {
-              debugPrint('[AuthGate] init error: ${initSnap.error}');
+              debugPrint('[AuthGate] init error: ${initSnap.stackTrace}');
               // You can show a non-blocking UI and still proceed to NavBar:
               // return Error UI if you prefer blocking the nav.
             }

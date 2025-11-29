@@ -1,6 +1,4 @@
-/**
- * not to be implemented yet.
- */
+//Not to be implemented yet
 
 class DefaultSettings {
   final String roundingMode;

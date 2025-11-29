@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:qubi_app/components/app_colors.dart';
+import 'package:qubi_app/assets/app_colors.dart';
 import 'package:qubi_app/pages/profile/components/theme_selector.dart';
 
 class DefaultSettingsPage extends StatefulWidget {
@@ -77,7 +77,7 @@ class _DefaultSettingsPageState extends State<DefaultSettingsPage> {
                       style: TextStyle(fontSize: 13, color: Colors.black54),
                     ),
                     const SizedBox(height: 12),
-                    Container(height: 1, color: Colors.black.withOpacity(0.1)),
+                    Container(height: 1, color: Colors.black.withValues(alpha: 0.1)),
                     const SizedBox(height: 8),
 
                     // Main "selected" box
@@ -307,7 +307,7 @@ class _DefaultSettingsPageState extends State<DefaultSettingsPage> {
                 child: Text(
                   "Saved changes will apply to two connected qubis.",
                   style: TextStyle(
-                    color: Colors.black.withOpacity(0.6),
+                    color: Colors.black.withValues(alpha: 0.6),
                     fontSize: 13,
                   ),
                 ),

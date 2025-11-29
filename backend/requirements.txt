@@ -1,4 +1,12 @@
 firebase-admin>=6.5.0
 python-dotenv>=1.0.1
-fastapi>=0.118.0
-fastapi[standard]==0.112.0
+fastapi[standard]>=0.118.0
+qiskit
+qiskit-ibm-runtime>=0.24.0
+qiskit-ionq
+firebase-admin
+python-dotenv
+matplotlib
+streamlit==1.51.0
+supabase==2.24.0
+#fastapi[standard]==0.112.0

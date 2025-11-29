@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 class SettingsSection extends StatelessWidget {
-  const SettingsSection();
+  const SettingsSection({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -48,6 +48,7 @@ class SettingTile extends StatelessWidget {
   final String svgAsset; // path to asset SVG
 
   const SettingTile({
+    super.key, 
     required this.title,
     required this.subtitle,
     required this.svgAsset,
@@ -132,7 +133,7 @@ class SvgBarIcon extends StatelessWidget {
   final String asset;
   final Color color;
 
-  const SvgBarIcon(this.asset, {required this.color});
+  const SvgBarIcon(this.asset, {super.key, required this.color});
 
   @override
   Widget build(BuildContext context) {

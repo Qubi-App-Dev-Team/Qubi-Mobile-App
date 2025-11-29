@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:qubi_app/components/app_colors.dart';
+import 'package:qubi_app/assets/app_colors.dart';
+import 'package:qubi_app/api/api_client.dart';
 import 'package:qubi_app/pages/home/run.dart';
-import 'package:qubi_app/pages/profile/models/execution.dart'; // new model import
+import 'package:qubi_app/pages/profile/models/execution_model.dart';
 
 class ExecHistoryPage extends StatefulWidget {
   const ExecHistoryPage({super.key});
@@ -15,48 +16,48 @@ class _ExecHistoryPageState extends State<ExecHistoryPage> {
   List<String> selectedHardware = [];
   DateTime? selectedDate;
 
-  // ----------------------------------------------
-  // Replace maps with strongly typed Executions
-  // ----------------------------------------------
-  final List<Execution> allExecutions = [
-    Execution(
-      message: true,
-      circuitId:
-          "abe6d955a212c337fa16498d5a378782330be5dc65e1bbc404a41f87383f3119",
-      runId: "Qv6DySvo3mjfiQLHkf8B",
-      quantumComputer: "IonQ",
-      histogramCounts: {"00": 490, "11": 510},
-      histogramProbabilities: {"00": 0.5, "11": 0.5},
-      time: 6.535945208001067,
-      shots: 1000,
-    ),
-    Execution(
-      message: true,
-      circuitId: "xyzzza11",
-      runId: "A12SDd891",
-      quantumComputer: "IBM",
-      histogramCounts: {"00": 563, "01": 242, "10": 193, "11": 437},
-      histogramProbabilities: {
-        "00": 0.563,
-        "01": 0.242,
-        "10": 0.193,
-        "11": 0.437,
-      },
-      time: 9.43,
-      shots: 1000,
-    ),
-  ];
+  List<ExecutionModel> allExecutions = [];
+  bool _isLoading = false;
+  String? _errorMessage;
 
-  List<Execution> get filteredExecutions {
+  @override
+  void initState() {
+    super.initState();
+    _fetchHistory();
+  }
+
+  Future<void> _fetchHistory() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final runs = await ApiClient.fetchRunHistory(limit: 20);
+      setState(() {
+        allExecutions = runs;
+      });
+    } catch (e) {
+      setState(() {
+        _errorMessage = e.toString();
+      });
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  List<ExecutionModel> get filteredExecutions {
     return allExecutions.where((exec) {
-      if (filterSentOut && exec.quantumComputer.contains("simulator")) {
-        return false; // exclude simulator if filtering real runs
+      if (filterSentOut &&
+          (exec.quantumComputer?.toLowerCase().contains("simulator") ?? false)) {
+        return false;
       }
       if (selectedHardware.isNotEmpty &&
           !selectedHardware.contains(exec.hardwareDisplayName)) {
         return false;
       }
-
       return true;
     }).toList();
   }
@@ -81,14 +82,9 @@ class _ExecHistoryPageState extends State<ExecHistoryPage> {
         transitionsBuilder: (_, animation, __, child) {
           const begin = Offset(1.0, 0.0);
           const end = Offset.zero;
-          final tween = Tween(
-            begin: begin,
-            end: end,
-          ).chain(CurveTween(curve: Curves.easeOutCubic));
-          return SlideTransition(
-            position: animation.drive(tween),
-            child: child,
-          );
+          final tween = Tween(begin: begin, end: end)
+              .chain(CurveTween(curve: Curves.easeOutCubic));
+          return SlideTransition(position: animation.drive(tween), child: child);
         },
       ),
     );
@@ -119,10 +115,8 @@ class _ExecHistoryPageState extends State<ExecHistoryPage> {
             child: GestureDetector(
               onTap: _openFilterPanel,
               child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
-                ),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
                   border: Border.all(color: Colors.black12),
                   borderRadius: BorderRadius.circular(24),
@@ -143,22 +137,49 @@ class _ExecHistoryPageState extends State<ExecHistoryPage> {
         ],
       ),
       body: SafeArea(
-        child: ListView.builder(
-          padding: const EdgeInsets.all(16),
-          itemCount: filteredExecutions.length,
-          itemBuilder: (context, i) =>
-              _executionCard(context, filteredExecutions[i]),
-        ),
+        child: _isLoading
+            ? const Center(
+                child: CircularProgressIndicator(
+                  valueColor:
+                      AlwaysStoppedAnimation<Color>(AppColors.electricIndigo),
+                ),
+              )
+            : _errorMessage != null
+                ? Center(
+                    child: Text(
+                      'Error: $_errorMessage',
+                      style: const TextStyle(color: Colors.redAccent),
+                    ),
+                  )
+                : allExecutions.isEmpty
+                    ? const Center(
+                        child: Text(
+                          'No past executions found.',
+                          style: TextStyle(color: Colors.black54),
+                        ),
+                      )
+                    : RefreshIndicator(
+                        onRefresh: _fetchHistory,
+                        child: ListView.builder(
+                          padding: const EdgeInsets.all(16),
+                          itemCount: filteredExecutions.length,
+                          itemBuilder: (context, i) =>
+                              _executionCard(context, filteredExecutions[i]),
+                        ),
+                      ),
       ),
     );
   }
 
-  Widget _executionCard(BuildContext context, Execution exec) {
-    final bool isSimulator = exec.quantumComputer.contains("simulator");
-    final Color badgeColor = isSimulator
-        ? AppColors.emberOrange
-        : AppColors.ionGreen;
+  Widget _executionCard(BuildContext context, ExecutionModel exec) {
+    final bool isSimulator =
+        exec.quantumComputer?.toLowerCase().contains("simulator") ?? false;
+    final Color badgeColor =
+        isSimulator ? AppColors.emberOrange : AppColors.ionGreen;
     final String badgeText = isSimulator ? "Simulated" : "Real";
+    final bool isSuccess = exec.success ?? true; // treat null as success for old data
+    final String statusText = isSuccess ? "Success" : "Failed";
+    final Color statusColor = isSuccess ? Colors.green : Colors.red;
 
     return GestureDetector(
       onTap: () {
@@ -202,7 +223,7 @@ class _ExecHistoryPageState extends State<ExecHistoryPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    exec.quantumComputer,
+                    exec.quantumComputer ?? 'Unknown',
                     style: const TextStyle(
                       fontWeight: FontWeight.w600,
                       fontSize: 16,
@@ -210,27 +231,50 @@ class _ExecHistoryPageState extends State<ExecHistoryPage> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    "Shots: ${exec.shots} • Time: ${exec.time.toStringAsFixed(2)}s",
-                    style: const TextStyle(fontSize: 12, color: Colors.black54),
+                    "Shots: ${exec.shots ?? 0} • Time: ${exec.elapsedTimeS?.toStringAsFixed(2) ?? '-'}s",
+                    style:
+                        const TextStyle(fontSize: 12, color: Colors.black54),
                   ),
                 ],
               ),
             ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: badgeColor.withOpacity(0.15),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                badgeText,
-                style: TextStyle(
-                  color: badgeColor,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 13,
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: badgeColor.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    badgeText,
+                    style: TextStyle(
+                      color: badgeColor,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                    ),
+                  ),
                 ),
-              ),
+                const SizedBox(height: 6),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: statusColor.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    statusText,
+                    style: TextStyle(
+                      color: statusColor,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+              ],
             ),
+
           ],
         ),
       ),
@@ -260,7 +304,6 @@ class _FilterPanelState extends State<_FilterPanel> {
   late List<String> hardware;
   DateTime? date;
 
-  // Define the fixed hardware categories
   final List<String> availableHardware = ["IBM", "IonQ", "Simulated"];
 
   @override
@@ -295,7 +338,6 @@ class _FilterPanelState extends State<_FilterPanel> {
               children: [
                 Column(
                   children: [
-                    // Gradient header
                     Container(
                       padding: const EdgeInsets.only(
                         top: 16,
@@ -334,8 +376,6 @@ class _FilterPanelState extends State<_FilterPanel> {
                         ],
                       ),
                     ),
-
-                    // Filter body
                     Expanded(
                       child: SingleChildScrollView(
                         padding: const EdgeInsets.all(20),
@@ -353,16 +393,14 @@ class _FilterPanelState extends State<_FilterPanel> {
                               title: const Text(
                                 "Sent to real quantum computers only",
                               ),
-                              controlAffinity: ListTileControlAffinity.leading,
+                              controlAffinity:
+                                  ListTileControlAffinity.leading,
                             ),
                             const Divider(),
-
                             _sectionHeader(
                               "Select hardware",
                               onClear: () => setState(() => hardware.clear()),
                             ),
-
-                            // ✅ Fixed hardware options
                             ...availableHardware.map((name) {
                               return CheckboxListTile(
                                 value: hardware.contains(name),
@@ -380,9 +418,7 @@ class _FilterPanelState extends State<_FilterPanel> {
                                     ListTileControlAffinity.leading,
                               );
                             }),
-
                             const Divider(),
-
                             _sectionHeader(
                               "Date",
                               onClear: () => setState(() => date = null),
@@ -433,8 +469,6 @@ class _FilterPanelState extends State<_FilterPanel> {
                     ),
                   ],
                 ),
-
-                // Apply button
                 Positioned(
                   bottom: 20,
                   right: 20,
@@ -473,17 +507,17 @@ class _FilterPanelState extends State<_FilterPanel> {
   }
 
   String _monthName(int m) => [
-    "Jan",
-    "Feb",
-    "Mar",
-    "Apr",
-    "May",
-    "Jun",
-    "Jul",
-    "Aug",
-    "Sept",
-    "Oct",
-    "Nov",
-    "Dec",
-  ][m - 1];
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun",
+        "Jul",
+        "Aug",
+        "Sept",
+        "Oct",
+        "Nov",
+        "Dec",
+      ][m - 1];
 }
