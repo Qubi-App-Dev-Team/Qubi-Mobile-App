@@ -77,6 +77,27 @@ class CircuitSectionState extends State<CircuitSection> {
     });
   }
 
+  void removeLastGate(int qubitIndex) {
+    setState(() {
+      for (int i = _gates.length - 1; i >= 0; i--) {
+        if (_gates[i].qubits.contains(qubitIndex)) {
+          _gates.removeAt(i);
+          break;
+        }
+      }
+      circuitDepth = processGates(_gates);
+    });
+
+    Future.delayed(const Duration(milliseconds: 50), () {
+      if (_scrollController.hasClients) {
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      }
+    });
+  }
 
   @override // init function with reading gates + getting depth
   void initState() {

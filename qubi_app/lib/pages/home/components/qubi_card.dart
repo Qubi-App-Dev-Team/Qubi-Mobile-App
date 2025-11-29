@@ -5,8 +5,9 @@ class QubiCard extends StatelessWidget {
   final Color qubiColor;
   final int qubitIndex;
   final Function(String gateType, int qubitIndex) onGatePressed;
+  final Function(int qubitIndex) onDeletePressed;
 
-  const QubiCard({super.key, required this.title, required this.qubiColor, required this.qubitIndex, required this.onGatePressed});
+  const QubiCard({super.key, required this.title, required this.qubiColor, required this.qubitIndex, required this.onGatePressed, required this.onDeletePressed});
 
   @override
   Widget build(BuildContext context) {
@@ -76,7 +77,7 @@ class QubiCard extends StatelessWidget {
                 children: [
                   Expanded(flex: 2, child: QubiGateButton(label: "CNOT",  bottomLeft: true, onPressed: () => onGatePressed("cx", qubitIndex))),
                   Expanded(flex: 3, child: QubiGateButton(label: "Measure", onPressed: () { print("Needs Something"); })),
-                  Expanded(flex: 1, child: QubiGateButton(label: "⌄", bottomRight: true, onPressed: () { print("Needs Something"); })),
+                  Expanded(flex: 1, child: QubiGateButton(label: "⌄", bottomRight: true, onPressed: () => onDeletePressed(qubitIndex))),
                 ],
               ),
             ],

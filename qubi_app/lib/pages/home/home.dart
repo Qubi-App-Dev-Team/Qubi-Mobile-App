@@ -61,6 +61,9 @@ class HomePage extends StatelessWidget {
 
                           circuitKey.currentState?.addGate(gateType, qubits);
                         },
+                        onDeletePressed: (qubitIndex) {
+                          circuitKey.currentState?.removeLastGate(qubitIndex);
+                        },
                       ),
                       QubiCard(
                         title: "Qubi v1",
@@ -72,6 +75,9 @@ class HomePage extends StatelessWidget {
                               : [qubitIndex];
 
                           circuitKey.currentState?.addGate(gateType, qubits);
+                        },
+                        onDeletePressed: (qubitIndex) {
+                          circuitKey.currentState?.removeLastGate(qubitIndex);
                         },
                       ),
                       // QubiCard(title: "Qubi v1", qubiColor: Colors.blue, qubitIndex: 2, onGatePressed: (gateType, qubit) => print("Pressed: $gateType"),),
