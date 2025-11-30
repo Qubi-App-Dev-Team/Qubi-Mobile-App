@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:qubi_app/pages/home/home.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-// This page can be used to add extra information like username, first/last name, profile photo etc.
-// but will not be used right now
+// Not implemented/used now - but can be for adding username, first/last name, linking with other emails etc.
 class AddEmailPasswordScreen extends StatefulWidget {
   final User user;
   const AddEmailPasswordScreen({super.key, required this.user});
@@ -44,7 +43,7 @@ class _AddEmailPasswordScreenState extends State<AddEmailPasswordScreen> {
         );
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (_) => const HomePage()),
+          MaterialPageRoute(builder: (_) => HomePage()),
         );
       }
     } on FirebaseAuthException catch (e) {

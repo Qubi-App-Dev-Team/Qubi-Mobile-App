@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:qubi_app/pages/home/components/circuit_section.dart';
 
 class CircuitBottomDrawer extends StatefulWidget {
-  const CircuitBottomDrawer({super.key});
+  final GlobalKey<CircuitSectionState> circuitKey;  
+  const CircuitBottomDrawer({required this.circuitKey, super.key});
 
   @override
   State<CircuitBottomDrawer> createState() => _CircuitBottomDrawerState();
@@ -105,11 +106,12 @@ class _CircuitBottomDrawerState extends State<CircuitBottomDrawer> with TickerPr
               // 🧩 Scrollable drawer body
               Flexible(
                 child: SingleChildScrollView(
+                  scrollDirection: Axis.vertical,
                   physics: const BouncingScrollPhysics(),
                   child: Column(
-                    children: const [
+                    children: [
                       SizedBox(height: 8),
-                      CircuitSection(),
+                      CircuitSection(key: widget.circuitKey),
                       SizedBox(height: 20),
                     ],
                   ),

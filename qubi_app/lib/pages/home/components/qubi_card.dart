@@ -3,8 +3,11 @@ import 'package:flutter/material.dart';
 class QubiCard extends StatelessWidget {
   final String title;
   final Color qubiColor;
+  final int qubitIndex;
+  final Function(String gateType, int qubitIndex) onGatePressed;
+  final Function(int qubitIndex) onDeletePressed;
 
-  const QubiCard({super.key, required this.title, required this.qubiColor});
+  const QubiCard({super.key, required this.title, required this.qubiColor, required this.qubitIndex, required this.onGatePressed, required this.onDeletePressed});
 
   @override
   Widget build(BuildContext context) {
@@ -61,26 +64,20 @@ class QubiCard extends StatelessWidget {
           Column(
             children: [
               Row(
-                children: const [
-                  Expanded(child: QubiGateButton(label: "X", topLeft: true)),
-                  Expanded(child: QubiGateButton(label: "Y")),
-                  Expanded(child: QubiGateButton(label: "Z")),
-                  Expanded(child: QubiGateButton(label: "T")),
-                  Expanded(child: QubiGateButton(label: "T*")),
-                  Expanded(child: QubiGateButton(label: "H", topRight: true)),
+                children: [
+                  Expanded(child: QubiGateButton(label: "X",  topLeft: true,  onPressed: () => onGatePressed("x", qubitIndex))),
+                  Expanded(child: QubiGateButton(label: "Y",  onPressed: () => onGatePressed("y", qubitIndex))),
+                  Expanded(child: QubiGateButton(label: "Z",  onPressed: () => onGatePressed("z", qubitIndex))),
+                  Expanded(child: QubiGateButton(label: "T",  onPressed: () => onGatePressed("t", qubitIndex))),
+                  Expanded(child: QubiGateButton(label: "T*", onPressed: () => onGatePressed("t*", qubitIndex))),
+                  Expanded(child: QubiGateButton(label: "H",  topRight: true, onPressed: () => onGatePressed("h", qubitIndex))),
                 ],
               ),
               Row(
-                children: const [
-                  Expanded(
-                    flex: 2,
-                    child: QubiGateButton(label: "CNOT", bottomLeft: true),
-                  ),
-                  Expanded(flex: 3, child: QubiGateButton(label: "Measure")),
-                  Expanded(
-                    flex: 1,
-                    child: QubiGateButton(label: "⌄", bottomRight: true),
-                  ),
+                children: [
+                  Expanded(flex: 2, child: QubiGateButton(label: "CNOT",  bottomLeft: true, onPressed: () => onGatePressed("cx", qubitIndex))),
+                  Expanded(flex: 3, child: QubiGateButton(label: "Measure", onPressed: () { print("Needs Something"); })),
+                  Expanded(flex: 1, child: QubiGateButton(label: "⌄", bottomRight: true, onPressed: () => onDeletePressed(qubitIndex))),
                 ],
               ),
             ],
@@ -97,10 +94,12 @@ class QubiGateButton extends StatelessWidget {
   final bool topRight;
   final bool bottomLeft;
   final bool bottomRight;
+  final VoidCallback onPressed;
 
   const QubiGateButton({
     super.key,
     required this.label,
+    required this.onPressed,
     this.topLeft = false,
     this.topRight = false,
     this.bottomLeft = false,
@@ -109,21 +108,38 @@ class QubiGateButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final borderRadius = BorderRadius.only(
+      topLeft: topLeft ? const Radius.circular(8) : Radius.zero,
+      topRight: topRight ? const Radius.circular(8) : Radius.zero,
+      bottomLeft: bottomLeft ? const Radius.circular(8) : Radius.zero,
+      bottomRight: bottomRight ? const Radius.circular(8) : Radius.zero,
+    );
+
     return Container(
-      alignment: Alignment.center, // center the label
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      margin: const EdgeInsets.symmetric(horizontal: .05), // small gap between buttons
-      decoration: BoxDecoration(
+      margin: const EdgeInsets.symmetric(horizontal: .05),
+      child: Material(
         color: Colors.white,
-        border: Border.all(color: Color(0xFFC7DDF0), width: 1),
-        borderRadius: BorderRadius.only(
-          topLeft: topLeft ? const Radius.circular(8) : Radius.zero,
-          topRight: topRight ? const Radius.circular(8) : Radius.zero,
-          bottomLeft: bottomLeft ? const Radius.circular(8) : Radius.zero,
-          bottomRight: bottomRight ? const Radius.circular(8) : Radius.zero,
+        shape: RoundedRectangleBorder(
+          borderRadius: borderRadius,
+          side: const BorderSide(color: Color(0xFFC7DDF0), width: 1),
+        ),
+        clipBehavior: Clip.antiAlias, // so ripple clips to rounded corners
+        child: InkWell(
+          onTap: onPressed,
+          borderRadius: borderRadius,
+          splashColor: Colors.teal.withValues(alpha: 0.2),
+          highlightColor: Colors.teal.withValues(alpha: 0.1),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            child: Center(
+              child: Text(
+                label,
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
+            ),
+          ),
         ),
       ),
-      child: Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
     );
   }
 }

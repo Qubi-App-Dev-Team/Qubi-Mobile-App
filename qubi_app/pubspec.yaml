@@ -41,7 +41,7 @@ flutter:
     - assets/images/qubi_logo.png
     - assets/fonts/   # not required for fonts to work, but harmless
     - assets/icons/
-
+    - assets/circuit.json
   fonts:
     - family: Strawford
       fonts:

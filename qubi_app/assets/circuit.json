@@ -1,0 +1,52 @@
+{
+  "gates": [
+    {
+      "name": "h",
+      "qubit": [0]
+    },
+    {
+      "name": "cx",
+      "qubit": [0, 1]
+    },
+    {
+      "name": "y",
+      "qubit": [1]
+    },
+    {
+      "name": "cz",
+      "qubit": [1, 0]
+    },
+    {
+      "name": "x",
+      "qubit": [1]
+    },
+    {
+      "name": "cz",
+      "qubit": [0, 1]
+    },
+    {
+      "name": "t*",
+      "qubit": [0]
+    },
+    {
+      "name": "z",
+      "qubit": [1]
+    },
+    {
+      "name": "cx",
+      "qubit": [1, 0]
+    },
+    {
+      "name": "t",
+      "qubit": [0]
+    }
+  ],
+  "name": "anewcircuit",
+  "classical": 2,
+  "qubit": 2,
+  "measure": {
+    "name": "measure",
+    "qubit": [0, 1],
+    "classical": [0, 1]
+  }
+}
