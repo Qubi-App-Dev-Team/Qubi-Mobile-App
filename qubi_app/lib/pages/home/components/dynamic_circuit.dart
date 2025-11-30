@@ -126,10 +126,13 @@ class CircuitView extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
     decoration: BoxDecoration(
-      color: Colors.grey.shade100,
+      color: Colors.white,
       borderRadius: BorderRadius.circular(12),
+      border: Border.all(
+        color: Colors.grey.shade400,
+      ),    
     ),
-    margin: const EdgeInsets.only(top: 10),
+    // margin: const EdgeInsets.only(top: 10),
     child: SizedBox(
       width: numPositions * gridSpacing,
       height: numQubits * 100,

@@ -1,14 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:qubi_app/pages/profile/models/execution.dart';
 import 'package:qubi_app/pages/home/executor.dart';
 import 'package:qubi_app/pages/story/story_page.dart';
 import 'package:qubi_app/pages/home/run.dart';
 import 'package:qubi_app/pages/home/components/dynamic_circuit.dart';
 import 'dart:convert';
 import 'package:flutter/services.dart' show rootBundle;
-import 'package:qubi_app/pages/home/components/loading_dialog.dart';
 import 'dart:math' as math;
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:qubi_app/pages/profile/models/execution_model.dart';
@@ -221,7 +218,7 @@ class CircuitSectionState extends State<CircuitSection> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => RunPage(execution: _lastShake!),
+                          builder: (_) => RunPage(execution: _lastShake!, gates: _gates, circuitDepth: circuitDepth),
                         ),
                       );
                     },
@@ -268,8 +265,8 @@ class CircuitSectionState extends State<CircuitSection> {
       // ✨ SHIMMER ONLY WHEN LOADING
       child: _loadingLastShake
           ? Shimmer.fromColors(
-              baseColor: Colors.white.withOpacity(0.8),
-              highlightColor: Colors.white.withOpacity(1),
+              baseColor: Colors.white.withValues(alpha: 0.8),
+              highlightColor: Colors.white.withValues(alpha: 1),
               child: content,
             )
           : content,
@@ -290,7 +287,7 @@ class CircuitSectionState extends State<CircuitSection> {
             top: 10,
             bottom: 5,
           ),
-          child: Row( // CHANGED FROM CONST TO NOT CONST
+          child: Row( 
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
@@ -438,7 +435,7 @@ class CircuitSectionState extends State<CircuitSection> {
                           context,
                           MaterialPageRoute(
                             builder: (_) =>
-                                RunPage(runRequestId: runRequestId),
+                                RunPage(runRequestId: runRequestId, gates: _gates, circuitDepth: circuitDepth),
                           ),
                         );
                       },
@@ -543,6 +540,8 @@ class CircuitSectionState extends State<CircuitSection> {
             runRequestId: runRequestId,
             quantumComputer: _quantumComputer,
             shots: _shots,
+            gates: _gates, 
+            circuitDepth: circuitDepth
           ),
         ),
       );

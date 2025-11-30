@@ -1,17 +1,19 @@
 import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:qubi_app/pages/profile/models/execution_model.dart'; // ⬅️ unified model
 import 'package:qubi_app/pages/story/story_page.dart';
+import 'package:qubi_app/pages/home/components/dynamic_circuit.dart';
 
 class RunPage extends StatefulWidget {
   final ExecutionModel? execution; // old flow now uses ExecutionModel
   final String? runRequestId; // new flow
   final String? quantumComputer;
   final int? shots;
+  final List<Gate>? gates;
+  final int? circuitDepth;
 
   const RunPage({
     super.key,
@@ -19,6 +21,8 @@ class RunPage extends StatefulWidget {
     this.runRequestId,
     this.quantumComputer,
     this.shots,
+    this.gates,
+    this.circuitDepth,
   });
 
   @override
@@ -32,6 +36,9 @@ class _RunPageState extends State<RunPage> {
   double? _elapsedTime; // null until result arrives
   int _shots = 0;
   String _quantumComputer = "";
+  List<Gate> _gates = [];
+  int _circuitDepth = 0;
+  late ScrollController scrollController;
 
   bool? _success;           // ⬅️ NEW: null = waiting, true/false = result
   String? _errorMessage;    // ⬅️ NEW
@@ -39,6 +46,7 @@ class _RunPageState extends State<RunPage> {
   @override
   void initState() {
     super.initState();
+    scrollController = ScrollController();
 
     // Old static path (now ExecutionModel)
     if (widget.execution != null) {
@@ -61,6 +69,9 @@ class _RunPageState extends State<RunPage> {
       _shots = widget.shots ?? 0;
       _listenForResults(widget.runRequestId!);
     }
+    // currently just reads the gates/depth from whats given - can change to update when reading from firebase
+    _gates = widget.gates ?? [];
+    _circuitDepth = widget.circuitDepth ?? 0;
   }
 
 
@@ -113,11 +124,10 @@ class _RunPageState extends State<RunPage> {
     });
   }
 
-
-
   @override
   void dispose() {
     _listener?.cancel();
+    scrollController.dispose();
     super.dispose();
   }
 
@@ -169,7 +179,7 @@ class _RunPageState extends State<RunPage> {
       appBar: AppBar(
         centerTitle: true,
         backgroundColor: const Color(0xFFE6EEF8),
-        elevation: 0, // CHANGED HERE
+        elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios, color: Colors.black),
           onPressed: () => Navigator.pop(context),
@@ -181,7 +191,7 @@ class _RunPageState extends State<RunPage> {
             fontWeight: FontWeight.w900,
             color: Colors.black,
           ),
-        ), // CHANGED HERE
+        ),
         actions: const [
           Padding(
             padding: EdgeInsets.only(right: 16),
@@ -204,7 +214,7 @@ class _RunPageState extends State<RunPage> {
           children: [
             _executorCard(),
             const SizedBox(height: 20),
-            _circuitCard(),
+            _circuitCard(scrollController),
             const SizedBox(height: 12),
             _resultsCard(results, totalShots, runTime),
           ],
@@ -246,31 +256,65 @@ class _RunPageState extends State<RunPage> {
   // ----------------------------------------------------------
   // CIRCUIT CARD
   // ----------------------------------------------------------
-  Widget _circuitCard() => Container(
+  Widget _circuitCard(ScrollController scrollController) => Container(
         width: double.infinity,
         decoration: _cardDecoration(),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              child: Text(
-                "Circuit",
-                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                "Depth: $_circuitDepth",
+                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
               ),
-            ),
-            const Divider(color: Color(0xFFE0E6ED), height: 1),
-            Container(
-              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
-              child: SvgPicture.asset(
-                'assets/images/circuit1.svg',
-                height: 140,
-                fit: BoxFit.contain,
-              ),
-            ),
-          ],
+              Row(
+                children: [
+                  IconButton( // back scroll button
+                    icon: const Icon(Icons.arrow_back_ios, size: 18, color: Colors.black54),
+                    onPressed: () {
+                      final double newOffset = scrollController.offset - 200;
+                      scrollController.animateTo(
+                        newOffset.clamp(0, scrollController.position.maxScrollExtent),
+                        duration: const Duration(milliseconds: 300),
+                        curve: Curves.easeInOut,
+                      );
+                    },
+                  ),
+                  IconButton( // forward scroll button
+                    icon: const Icon(Icons.arrow_forward_ios, size: 18, color: Colors.black54),
+                    onPressed: () {
+                      final double newOffset = scrollController.offset + 200;
+                      scrollController.animateTo(
+                        newOffset.clamp(0, scrollController.position.maxScrollExtent),
+                        duration: const Duration(milliseconds: 300),
+                        curve: Curves.easeInOut,
+                      );
+                    },
+                  )
+                ]
+              )
+            ],
+          ),
         ),
-      );
+
+        const Divider(color: Color(0xFFE0E6ED), height: 1),
+        SizedBox(
+          width: double.infinity,
+          child: SingleChildScrollView(
+              controller: scrollController,
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
+              physics: const BouncingScrollPhysics(),
+              child: CircuitView(gates: _gates, circuitDepth: _circuitDepth),
+            ),
+          ),
+      ],
+    ),
+  );
 
   // ----------------------------------------------------------
   // RESULTS CARD — spinner shown only in graph section
@@ -450,9 +494,7 @@ class _RunPageState extends State<RunPage> {
                       ),
           ),
 
-
           const SizedBox(height: 8),
-
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12),
             child: Column(
