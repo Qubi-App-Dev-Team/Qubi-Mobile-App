@@ -23,7 +23,7 @@ class CircuitSectionState extends State<CircuitSection> {
   List<Gate> _gates = [];
   // late Future<List<Gate>> _futureGates;
   int circuitDepth = 0;
-  late ScrollController _scrollController = ScrollController();
+  late final ScrollController _scrollController = ScrollController();
   bool _isSubmitting = false;
   DateTime? _shakeLoadStart;
   int _minShimmerMs = 1800; // 1.8 seconds minimum
@@ -162,7 +162,6 @@ class CircuitSectionState extends State<CircuitSection> {
   @override
   void initState() {
     super.initState();
-    _scrollController = ScrollController();
     loadCircuit().then((gates) {
       setState(() {
         _gates = gates;
